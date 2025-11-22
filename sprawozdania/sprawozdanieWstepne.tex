@@ -1,0 +1,142 @@
+% !TeX program = pdflatex
+\documentclass[11pt,a4paper]{article}
+
+% --- Język i czcionki ---
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[polish]{babel}
+\usepackage{lmodern}
+\usepackage[final]{microtype}
+
+% --- Układ strony i nagłówki/stopki ---
+\usepackage[a4paper,margin=2.5cm]{geometry}
+\usepackage{fancyhdr}
+\pagestyle{fancy}
+\fancyhf{} % czyść wszystko
+\lhead{Notatki z matematyki}
+\rhead{\leftmark}
+\cfoot{\thepage}
+
+% --- Matematyka ---
+\usepackage{amsmath,amssymb,amsthm,mathtools}
+\usepackage{siunitx} % jeżeli potrzebne jednostki
+\sisetup{locale = PL} % separator 1,23 (polski), można zmienić na locale=PL gdy dostępne
+\usepackage{bm}       % pogrubione symbole
+
+% --- Odsyłacze i tytuły ---
+\usepackage[hidelinks]{hyperref}
+\usepackage[nameinlink,capitalise,noabbrev]{cleveref}
+\usepackage{csquotes}
+
+% --- Listy i drobiazgi ---
+\usepackage{enumitem}
+\setlist{noitemsep,topsep=3pt}
+\usepackage{xcolor}
+
+% --- Środowiska twierdzeń po polsku ---
+\newtheoremstyle{polski}% name
+  {6pt}{6pt}% space above/below
+  {\itshape}% body font
+  {}% indent
+  {\bfseries}% head font
+  {.}% punctuation
+  {0.5em}% spacing after head
+  {}% head spec
+\theoremstyle{polski}
+\newtheorem{tw}{Twierdzenie}[section]
+\newtheorem{lem}[tw]{Lemat}
+\newtheorem{wniosek}[tw]{Wniosek}
+
+\newtheoremstyle{polski-def}
+  {6pt}{6pt}{\normalfont}{}{\bfseries}{.}{0.5em}{}
+\theoremstyle{polski-def}
+\newtheorem{defi}[tw]{Definicja}
+\newtheorem{przyklad}[tw]{Przykład}
+\newtheorem{uwaga}[tw]{Uwaga}
+
+% --- Nazwy do cleveref po polsku ---
+\crefname{tw}{twierdzenie}{twierdzenia}
+\Crefname{tw}{Twierdzenie}{Twierdzenia}
+\crefname{lem}{lemat}{lematy}
+\Crefname{lem}{Lemat}{Lematy}
+\crefname{wniosek}{wniosek}{wnioski}
+\Crefname{wniosek}{Wniosek}{Wnioski}
+\crefname{defi}{definicja}{definicje}
+\Crefname{defi}{Definicja}{Definicje}
+\crefname{przyklad}{przykład}{przykłady}
+\Crefname{przyklad}{Przykład}{Przykłady}
+\crefname{uwaga}{uwaga}{uwagi}
+\Crefname{uwaga}{Uwaga}{Uwagi}
+\crefname{equation}{równanie}{równania}
+\Crefname{equation}{Równanie}{Równania}
+\crefname{section}{sekcja}{sekcje}
+\Crefname{section}{Sekcja}{Sekcje}
+
+% --- Szybkie skróty ---
+\newcommand{\N}{\mathbb{N}}
+\newcommand{\Z}{\mathbb{Z}}
+\newcommand{\Q}{\mathbb{Q}}
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\C}{\mathbb{C}}
+\DeclareMathOperator{\sgn}{sgn}
+\DeclareMathOperator{\Var}{Var}
+\DeclareMathOperator{\E}{\mathbb{E}}
+
+% --- Numeracja i wygląd sekcji ---
+\numberwithin{equation}{section}
+\setcounter{secnumdepth}{3}
+\setcounter{tocdepth}{2}
+
+% --- Meta ---
+\title{Sprawozdanie z etapu 1.}
+\author{Jakub Kogut}
+\date{\today}
+
+\begin{document}
+\maketitle
+\section{Członkowie zespołu}
+Nasz zespół składa się z 5 członków:
+\begin{itemize}
+    \item Jakub Kogut -- kierownik zespołu,
+    \item Manfred Gawlas,
+    \item Szymon Hładyszewski,
+    \item Wiktor Koczkodaj,
+    \item Wojciech Typer,
+\end{itemize}
+
+\section{Temat i zakres projektu}
+\textbf{Temat:} Aplikacja mobilna do nauki o inwestowaniu, przeznaczona dla studentów Uniwersytetu Ekonomicznego we Wrocławiu. \newline
+\textbf{Zakres:}
+\begin{itemize}
+    \item Aplikacja mobilna na system Android, zawierająca:
+        \begin{itemize}
+            \item moduł z materiałami edukacyjnymi: wykładami (statyczne)
+            \item moduł z quizami sprawdzającymi wiedzę (statyczne/możliwe dynamiczne)
+            \item forum do dyskusji dla użytkowniów
+            \item system rankingu użytkowników (otrzymywane punkty za quizy)
+        \end{itemize}
+    \item API do zarządzania danymi aplikacji
+        \begin{itemize}
+            \item zarządzanie użytkownikami
+            \item zarządzanie materiałami edukacyjnymi
+            \item zarządzanie quizami
+            \item zarządzanie forum
+            \item zarządzanie rankingiem
+            \item panel administratora
+        \end{itemize}
+        Zintegrowane z bazą danych
+\end{itemize}
+
+\section{Wykorzystane technologie}
+Planujemy wykorzystać następujące technologie:
+\begin{itemize}
+    \item Aplikacja mobilna: Kotlin + Jetpack Compose
+    \item API: python + Django + Django REST framework
+    \item Baza danych: PostgreSQL (obsługiwane przez Django)
+\end{itemize}
+
+\section{Zarządzanie projektem}
+Do zarządzania chcemy wykorzystać Github Projects. Repozytorium dostępne jest pod adresem: \url{https://github.com/niooch/bizwise.git}
+            
+\end{document}
+

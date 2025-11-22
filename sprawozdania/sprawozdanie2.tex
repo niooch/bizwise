@@ -1,0 +1,133 @@
+% !TeX program = pdflatex
+\documentclass[11pt,a4paper]{article}
+
+% --- Język i czcionki ---
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[polish]{babel}
+\usepackage{lmodern}
+\usepackage[final]{microtype}
+
+% --- Układ strony i nagłówki/stopki ---
+\usepackage[a4paper,margin=2.5cm]{geometry}
+\usepackage{fancyhdr}
+\pagestyle{fancy}
+\fancyhf{} % czyść wszystko
+\lhead{Etap 2.}
+\rhead{\leftmark}
+\cfoot{\thepage}
+
+% --- Matematyka ---
+\usepackage{amsmath,amssymb,amsthm,mathtools}
+\usepackage{siunitx} % jeżeli potrzebne jednostki
+\sisetup{locale = PL} % separator 1,23 (polski), można zmienić na locale=PL gdy dostępne
+\usepackage{bm}       % pogrubione symbole
+
+% --- Odsyłacze i tytuły ---
+\usepackage[hidelinks]{hyperref}
+\usepackage[nameinlink,capitalise,noabbrev]{cleveref}
+\usepackage{csquotes}
+
+% --- Listy i drobiazgi ---
+\usepackage{enumitem}
+\setlist{noitemsep,topsep=3pt}
+\usepackage{xcolor}
+
+% --- Numeracja i wygląd sekcji ---
+\numberwithin{equation}{section}
+\setcounter{secnumdepth}{3}
+\setcounter{tocdepth}{2}
+
+% --- Meta ---
+\title{Sprawozdanie z etapu 2.}
+\author{Jakub Kogut}
+\date{\today}
+
+\begin{document}
+\maketitle
+\section{Wymagania Funkcjonalne}
+Nasz projekt zakłada stworzenie aplikacji mobilnej dla systemu Android z natępującymi funkcjonalnościami:
+\begin{itemize}
+    \item Rejestracja i logowanie użytkowników.
+    \item Modyfikacja profilu użytkownika (wybranie awatatu).
+    \item System poziomów i odznak za postępy w nauce.
+    \item Przeglądanie swoich postępów w nauce (poziomy, zdobyte odznaki itp.).
+    \item Nauka z kursów, podzielonych w następujący sposób:
+        \[
+        \text{Kurs} \rightarrow \text{Lekcje}\quad \text{Lekcja} \rightarrow \text{Slaidy} + \text{Quiz na koniec lekcji}
+        \]
+    \item Quizy będą zawierały pytania losowane z puli, otwarte (wartości liczbowe) oraz zamknięte.
+    \item Ekran końcowy z wynikami podsumowującymi wyniki quizu.
+    \item Forum dyskusyjne dla użytkowników podzielone na kategorie z systemem komentarzy i odpowiedzi, ocen postów.
+    \item Zakładka z quizami do samodzielnej nauki.
+\end{itemize}
+\section{Podział na zadania}
+Planujemy podzielić projekt na dwa obszary:
+\begin{itemize}
+    \item Backend (Django + DRF):
+        \begin{enumerate}
+            \item Analiza i planowanie bazy danych.
+            \item Zaplanowanie wymaganych endpointów API.
+            \item Implementacja modeli bazy danych (podział na sekcje: Kursy, Quizy, Użytkownicy, Forum).
+            \item Implementacja endpointów API (zgodnie z w.w. podziałem)
+            \item Stworzenie przyjaznego dla administratora panelu administracyjnego (dodawanie treści).
+            \item Testowanie i dokumentacja API.
+            \item Wystawienie API na serwerze.
+        \end{enumerate}
+    \item Frontend (Aplikacja mobilna):
+        \begin{enumerate}
+            \item Stworzenie logiki odpowiedzialnej za komunikację z API.
+            \item Tworzenie przyjaznego interfejsu użytkownika (UI/UX).
+                \begin{itemize}
+                    \item Ekran startowy,
+                    \item Ekran rejestracji/logowania,
+                    \item Ekran profilu użytkownika,
+                    \item System nauki: ekrany kursów, lekcji, slaidów, quizów i przepływ między nimi,
+                    \item Ekran wyników quizu,
+                    \item Ekran forum dyskusyjnego,
+                    \item Ekran z quizami do samodzielnej nauki.
+                \end{itemize}
+            \item Integracja z backendem (wykorzystanie endpointów API).
+            \item Obsługa błędów i wyjątków (np. brak połączenia z internetem).
+            \item Testowanie aplikacji na różnych urządzeniach.
+        \end{enumerate}
+\end{itemize}
+Do każdego z obszarów przydzieliśmy po dwóch członków zespołu, którzy będą odpowiedzialni za jego realizację:
+\begin{itemize}
+    \item Backend:
+        \begin{itemize}
+            \item Jakub Kogut
+            \item Wiktor Koczkodaj
+        \end{itemize}
+    \item Aplikacja mobilna:
+        \begin{itemize}
+            \item Szymon Hładyszewski
+            \item Wojciech Typer
+        \end{itemize}
+\end{itemize}
+\section{Harmonogram Prac}
+Planowany harmonogram prac przedstawia się następująco:
+%dolacz gantt.png
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=\textwidth]{gantt.png}
+    \caption{Harmonogram prac nad projektem}
+    \label{fig:gantt}
+\end{figure}
+\section{Wybrane Technologie}
+Do wykonania backendu planujemy użyć frameworka Django wraz z Django REST Framework (DRF) do tworzenia API. Baza danych zostanie zaimplementowana przy użyciu PostgreSQL, będzie zarządzana przez Django. Framework ten w łatwy sposób pozwala na tworzenie dobrej dokumentacji API, panelu administratora oraz jest wysoce modularny i skalowalny. 
+\\
+Natomiast do stworzenia samej aplikacji mobilnej planujemy użyć:
+\begin{itemize}
+    \item \textbf{Kotlin}: nowoczesny język programowania stworzony z myślą o tworzeniu aplikacji mobilnych. Wyróżnia się duża ilością popularnych frameworków, dobrze obsługuje wielowątkowość oraz jest mocno pokrewny z Javą.
+    \item \textbf{Jetpack Compose}: framework UI, który umożliwia:
+        \begin{itemize}
+            \item tworzenie UI bez użycia XML,
+            \item pisanie całej logiki UI w Kotlinie,
+            \item intuicyjne zarządzanie stanem aplikacji,
+            \item łatwą integrację z innymi narzędziami Androida.
+        \end{itemize}
+\end{itemize}
+            
+\end{document}
+

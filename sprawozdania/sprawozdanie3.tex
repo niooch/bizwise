@@ -1,0 +1,82 @@
+% !TeX program = pdflatex
+\documentclass[11pt,a4paper]{article}
+
+% --- Język i czcionki ---
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[polish]{babel}
+\usepackage{lmodern}
+\usepackage[final]{microtype}
+
+% --- Układ strony i nagłówki/stopki ---
+\usepackage[a4paper,margin=2.5cm]{geometry}
+\usepackage{fancyhdr}
+\pagestyle{fancy}
+\fancyhf{} % czyść wszystko
+\lhead{Etap 2.}
+\rhead{\leftmark}
+\cfoot{\thepage}
+
+% --- Matematyka ---
+\usepackage{amsmath,amssymb,amsthm,mathtools}
+\usepackage{siunitx} % jeżeli potrzebne jednostki
+\sisetup{locale = PL} % separator 1,23 (polski), można zmienić na locale=PL gdy dostępne
+\usepackage{bm}       % pogrubione symbole
+
+% --- Odsyłacze i tytuły ---
+\usepackage[hidelinks]{hyperref}
+\usepackage[nameinlink,capitalise,noabbrev]{cleveref}
+\usepackage{csquotes}
+
+% --- Listy i drobiazgi ---
+\usepackage{enumitem}
+\setlist{noitemsep,topsep=3pt}
+\usepackage{xcolor}
+
+% --- Numeracja i wygląd sekcji ---
+\numberwithin{equation}{section}
+\setcounter{secnumdepth}{3}
+\setcounter{tocdepth}{2}
+
+% --- Meta ---
+\title{Sprawozdanie z etapu 3.}
+\author{Jakub Kogut}
+\date{\today}
+
+\begin{document}
+\maketitle
+W tym etapie projektu przedstawiamy nasz plan na jego implementację. Składa się ona z odpowiednio z projektu backendu oraz frontendu.
+\section{Backend}
+Nasz backend będzie odpowiedziany za przechowywanie oraz przetwarzanie wszelakich danych jak i musi posiadać \textit{user friendly} metodę na ich wpowadzenie. W tym celu zdecydowaliśmy się na użycie frameworku \textbf{Django} wraz z \textbf{Django REST Framework} do stworzenia API. Do przechowywania danych użyjemy bazy danych \textbf{PostgreSQL}, która jest utrzymywana przez \textbf{Django}.
+\subsection{Baza danych}
+W bazie danych przechowywane będą wszelkie dane dotyczące użytkowników jak i zdobytych przez nich nagród, czy dane do kursów oraz quizów, a także forum.
+\subsubsection{Tabele}
+W bazie danych znajdować się będą następujące tabele:
+\begin{itemize}
+    \item \textbf{Users} - tabela przechowująca dane użytkowników
+    \item \textbf{Courses} - tabela przechowująca dane kursów
+\end{itemize}
+
+
+\subsubsection{Funkcje, Triggery}
+
+\subsection{Permisje}
+Aby zabezpieczyć aplikację przed nieautoryzowanym dostępem, wprowadzimy system permisji. Użytkownicy będą podzieleni na dwie grupy:
+\begin{itemize}
+    \item \textbf{Użytkownicy zarejestrowani}\footnote{restracja poprzez nickname i hasło} - będą mieli dostęp do kursów, quizów oraz forum, nagród innych użytkowników
+    \item \textbf{Administratorzy} - będą mieli dostęp do interfejsu administratora, gdzie będą mogli zarządzać kursami, quizami oraz użytkownikami
+\end{itemize}
+Dodatkowo, jeżeli użytkownik chciałby edytować/usunąć swój post/komentarz na forum, będzie wymagane sprawdzenie czy jest on autorem danego postu/komentarza.
+
+
+
+\section{Interfejs administratora}
+Django posiada wbudowany interfejs administratora, który pozwala na zarządzanie bazą danych bez konieczności tworzenia własnego panelu. W naszym projekcie wykorzystamy ten interfejs do zarządzania w szególności kursami oraz quizami.\\
+Administrator będzie miał możliwość tworzenia oraz edytowania poprzez interfejs administratora:
+\begin{itemize}
+    \item tworzenie lekcji na podstawie dodawania slaidów z tekstem, ewentualnie obrazkami
+    \item tworzenie quizów na podstawie pytań otwartych (warości numeryczne) oraz zamkniętych.
+    \item dodawanie avatarów użytkowników (userzy mogą wybierać avatary z puli dostępnych w serwisie)
+\end{itemize}
+\end{document}
+
