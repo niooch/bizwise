@@ -1,0 +1,71 @@
+@startuml
+left to right direction
+skinparam actorStyle awesome
+skinparam packageStyle rectangle
+skinparam shadowing false
+skinparam linetype ortho
+
+' Kolory ogólne
+skinparam backgroundColor #FFFFFF
+skinparam packageBorderColor #6B7A99
+skinparam usecaseBorderColor #4F5D75
+skinparam usecaseBackgroundColor #F7F9FC
+skinparam actorBackgroundColor #FFF3E0
+skinparam actorBorderColor #EF8F3A
+
+actor "Użytkownik" as User
+actor "Administrator" as Admin
+
+rectangle "BizWise – aplikacja do nauki inwestowania" #FFFFFF {
+
+  package "Dostęp i profil" #DDEBFF {
+    usecase "Rejestracja / Logowanie" as UC_Auth #B3D9FF
+    usecase "Zarządzanie profilem\n(avatar, dane, podgląd)" as UC_Profile #C7E6FF
+    usecase "Podgląd postępów\n(exp, poziom, odznaki)" as UC_Progress #C7E6FF
+  }
+
+  package "Nauka" #E6F7E6 {
+    usecase "Przeglądanie kursów" as UC_Courses #BFECC0
+    usecase "Realizacja kursu\n(lekcje + slajdy)" as UC_Learn #CFF2D0
+    usecase "Quizy\n(w lekcji lub osobno)" as UC_Quizzes #CFF2D0
+  }
+
+  package "Ranking i nagrody" #FFF2CC {
+    usecase "Podgląd rankingu\noraz odznak" as UC_Ranking #FFE599
+  }
+
+  package "Forum" #F3E6FF {
+    usecase "Przeglądanie forum" as UC_ForumBrowse #D9C2FF
+    usecase "Udział w dyskusji\n(posty, komentarze, reakcje)" as UC_ForumUse #E6D6FF
+  }
+
+  package "Panel administratora" #FFE6E6 {
+    usecase "Zarządzanie użytkownikami" as UC_AdminUsers #FFB3B3
+    usecase "Zarządzanie treściami\n(kursy, lekcje, slajdy,\nquizy, pytania)" as UC_AdminContent #FFC9C9
+    usecase "Moderacja forum" as UC_AdminForum #FFC9C9
+    usecase "Zarządzanie awatarami" as UC_AdminAvatars #FFC9C9
+  }
+
+  ' relacje między przypadkami
+  UC_Learn .> UC_Courses : <<include>>
+  UC_Quizzes .> UC_Learn : <<extend>>
+  UC_ForumUse .> UC_ForumBrowse : <<include>>
+}
+
+' powiązania aktorów
+User --> UC_Auth
+User --> UC_Profile
+User --> UC_Progress
+User --> UC_Courses
+User --> UC_Learn
+User --> UC_Quizzes
+User --> UC_Ranking
+User --> UC_ForumBrowse
+User --> UC_ForumUse
+
+Admin --> UC_AdminUsers
+Admin --> UC_AdminContent
+Admin --> UC_AdminForum
+Admin --> UC_AdminAvatars
+
+@enduml

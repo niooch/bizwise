@@ -1,0 +1,225 @@
+@startuml Schema_Elearning_EN
+
+' Visual settings
+hide circle
+skinparam linetype ortho
+skinparam monochrome true
+skinparam shadowing false
+skinparam class {
+    BackgroundColor White
+    BorderColor Black
+    ArrowColor Black
+}
+
+' ===================================
+' 1. User and Fundamentals (Main Point)
+' ===================================
+entity User {
+  * id (PK)
+  --
+  nickname
+  password_hash
+  avatar_id
+}
+
+entity UserStreak {
+  * user_id (PK, FK)
+  --
+  best_streak
+  begin_date
+  last_activity_date
+}
+
+' ===================================
+' 2. Course and Lesson Structure (Upper Left)
+' ===================================
+entity Course {
+  * id (PK)
+  --
+  name
+}
+
+entity Lesson {
+  * id (PK)
+  --
+  name
+}
+
+entity CourseLesson {
+  * course_id (PK, FK)
+  * lesson_id (PK, FK)
+  --
+  order (INT)
+}
+
+entity Slide {
+  * id (PK)
+  --
+  * lesson_id (FK)
+  title
+  image_url
+  text_content
+  order (INT)
+}
+
+' ===================================
+' 3. Quizzes and Questions (Central Area)
+' ===================================
+entity Quiz {
+  * id (PK)
+  --
+  name
+  exp_weight (FLOAT)
+}
+
+entity Question {
+  * id (PK)
+  --
+  * quiz_id (FK)
+  question_type (ENUM: 'OPEN', 'CLOSED')
+  content
+}
+
+entity AnswerOption {
+  * id (PK)
+  --
+  * question_id (FK)
+  content
+  is_correct (BOOLEAN)
+}
+
+entity AnswerPattern {
+  * id (PK)
+  --
+  * question_id (FK)
+  text_pattern (REGEX/TEXT)
+}
+
+' Quiz Assignments
+entity LessonQuiz {
+  * quiz_id (PK, FK)
+  * lesson_id (PK, FK)
+  --
+}
+
+' ===================================
+' 4. Tracking Progress and Results (Center Bottom)
+' ===================================
+entity UserProgress {
+  * user_id (PK, FK)
+  * lesson_id (PK, FK)
+  --
+  course_id (FK)
+  completion_date
+}
+
+entity QuizResult {
+  * user_id (PK, FK)
+  * quiz_id (PK, FK)
+  --
+  best_score (INT)
+  last_completion_date
+}
+
+' ===================================
+' 5. Forum Structure (Right Side)
+' ===================================
+
+entity Post {
+  * id (PK)
+  --
+  * author_id (FK)
+  title
+  content
+  creation_date
+}
+
+entity Tag {
+  * id (PK)
+  --
+  name
+}
+
+entity PostTag {
+  * post_id (PK, FK)
+  * tag_id (PK, FK)
+}
+
+entity Comment {
+  * id (PK)
+  --
+  * post_id (FK)
+  * author_id (FK)
+  parent_comment_id (FK)
+  content
+  creation_date
+}
+
+entity Reaction {
+  * id (PK)
+  --
+  reaction_type
+}
+
+entity PostReaction {
+  * user_id (PK, FK)
+  * post_id (PK, FK)
+  * reaction_id (FK)
+}
+
+entity CommentReaction {
+  * user_id (PK, FK)
+  * comment_id (PK, FK)
+  * reaction_id (FK)
+}
+
+
+' ===================================
+' Relationships
+' ===================================
+
+' User and Progress
+User ||--|{ UserStreak : "1:1 Cache"
+User ||--o{ UserProgress
+User ||--o{ QuizResult
+
+' User and Forum
+User ||--o{ Post : Author
+User ||--o{ Comment : Author
+
+' Courses and Lessons
+Course }|--|{ CourseLesson
+Lesson }|--|{ CourseLesson
+Lesson ||--o{ Slide
+
+' Lessons and Progress
+Lesson ||--o{ UserProgress
+
+' Quizzes and Assignments (Lesson)
+Quiz }|--|{ LessonQuiz
+Lesson }|--|{ LessonQuiz
+
+' Results
+Quiz ||--o{ QuizResult
+
+' Questions and Quizzes/Answers
+Quiz ||--o{ Question
+Question ||--o{ AnswerOption : "Selection Options"
+Question ||--o{ AnswerPattern : "Text Patterns"
+
+' Forum
+Post ||--o{ Comment
+Tag }|--|{ PostTag
+Post }|--|{ PostTag
+Comment "1" o--o{ Comment : Parent_Reply
+
+' Reactions
+Reaction }|--o{ PostReaction
+Post }|--|{ PostReaction
+User }|--|{ PostReaction
+
+Reaction }|--o{ CommentReaction
+Comment }|--|{ CommentReaction
+User }|--|{ CommentReaction
+
+@enduml
