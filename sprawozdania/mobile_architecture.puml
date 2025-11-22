@@ -1,0 +1,150 @@
+@startuml
+
+skinparam classAttributeIconSize 0
+skinparam componentStyle uml2
+skinparam packageStyle rectangle
+
+' Stylizacja
+skinparam class {
+    BackgroundColor White
+    ArrowColor #2C3E50
+    BorderColor #2C3E50
+}
+
+title Diagram Architektury Aplikacji Mobilnej (Android/Kotlin)
+
+' --- WARSTWA INFRASTRUKTURY ---
+package "Infrastruktura & Sieć" {
+    class NetworkManager {
+        + checkInternetConnection(): Boolean
+        + handleHttpError(errorCode: Int)
+        --
+        Obsługa błędów:
+        * 401 -> Wymuś wylogowanie
+        * 404 -> Ekran błędu
+        * No Internet -> Blokada akcji
+    }
+
+    class ApiService {
+        + sendRequest()
+        + getAuthToken()
+    }
+
+    NetworkManager -r-> ApiService : nadzoruje
+}
+
+' --- MODUŁY APLIKACJI ---
+
+package "Moduł Autentykacji" {
+    class StartScreen <<Screen>> {
+        + navigateToLogin()
+        + navigateToRegister()
+    }
+
+    class AuthScreen <<Screen>> {
+        - nicknameInput: String
+        - passwordInput: String
+        + validateInput()
+        + submitCredentials()
+    }
+
+    class TokenManager {
+        + saveToken(token: String)
+        + getToken(): String
+    }
+
+    StartScreen ..> AuthScreen : nawigacja
+    AuthScreen ..> TokenManager : zapisuje token
+}
+
+package "Moduł Profilu Użytkownika" {
+    class ProfileScreen <<Screen>> {
+        + showAvatar()
+        + showNickname()
+        + showStreakStats()
+        + showXPHistory()
+        + showHistoryList()
+    }
+}
+
+package "System Nauki (Learning Path)" {
+    class CourseListScreen <<Screen>> {
+        + displayCourses()
+        + showProgressBar()
+    }
+
+    class LessonScreen <<Screen>> {
+        - currentSlideIndex: Int
+        + renderText()
+        + loadNetworkImage()
+        + nextSlide()
+        --
+        Reguła:
+        Wymusza liniowy przepływ
+        (brak pomijania slajdów)
+    }
+
+    CourseListScreen ..> LessonScreen : wybór lekcji
+}
+
+package "Moduł Quizów" {
+    class QuizScreen <<Screen>> {
+        + displayQuestion()
+    }
+
+    class QuestionComponent <<UI Component>> {
+        + renderClosedQuestion(options: List)
+        + renderOpenQuestion(inputField)
+    }
+
+    class ResultScreen <<Screen>> {
+        + sendAnswersToAPI()
+        + displayScore()
+        + updateStreakInfo()
+        + addXP()
+    }
+
+    class SelfStudyScreen <<Screen>> {
+        + startRandomQuiz()
+    }
+
+    QuizScreen *-- QuestionComponent : zawiera
+    QuizScreen ..> ResultScreen : po zakończeniu
+    SelfStudyScreen ..> QuizScreen : uruchamia
+    LessonScreen ..> QuizScreen : po lekcji
+}
+
+package "Forum Dyskusyjne" {
+    class ThreadListScreen <<Screen>> {
+        + filterByTag(tag: Tag)
+        + displayPosts()
+    }
+
+    class PostDetailScreen <<Screen>> {
+        + displayContent()
+        + displayCommentTree()
+        + addReaction(upvote)
+    }
+
+    class CreatePostInteraction {
+        + createPost()
+        + addComment()
+    }
+
+    ThreadListScreen ..> PostDetailScreen : wybór wątku
+    PostDetailScreen ..> CreatePostInteraction : interakcja
+}
+
+' --- RELACJE GŁÓWNE ---
+AuthScreen --> ApiService : autoryzacja
+ProfileScreen --> ApiService : pobiera dane
+CourseListScreen --> ApiService : pobiera kursy
+ResultScreen --> ApiService : wysyła wyniki
+ThreadListScreen --> ApiService : pobiera posty
+
+note right of NetworkManager
+  Globalny mechanizm
+  obsługi błędów
+end note
+
+@enduml

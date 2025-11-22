@@ -27,6 +27,7 @@
 \usepackage[hidelinks]{hyperref}
 \usepackage[nameinlink,capitalise,noabbrev]{cleveref}
 \usepackage{csquotes}
+\usepackage{float}
 
 % --- Listy i drobiazgi ---
 \usepackage{enumitem}
@@ -55,7 +56,7 @@ W bazie danych znajdować się będą następujące tabele:
 \begin{itemize}
     \item \textbf{User}: przechowuje dane użytkowników
         \begin{itemize}
-            \item \texttt{id} \textbf(PK)} - unikalny identyfikator użytkownika
+            \item \texttt{id} \textbf(PK) - unikalny identyfikator użytkownika
             \item \texttt{nickname} - nazwa użytkownika \textit{unique}
             \item \texttt{password\_hash} - zahashowane hasło użytkownika
             \item \texttt{avatar\_id} - identyfikator avatara użytkownika (możliwe rozszezenie bazy o tabelę Avatar)
@@ -224,13 +225,76 @@ Administrator będzie miał możliwość tworzenia oraz edytowania poprzez inter
 
 \section{Diagramy}
 Poniżej przedstawiamy diagramy przedstawiające strukturę projektu:
-\begin{figure}[h]
+\begin{figure}[H]
     \centering
     \includegraphics[width=0.3\textwidth]{diagramPrzypadkowUzycia.png}
     \caption{Diagram przypadków użycia}
     \label{fig:useCaseDiagram}
 \end{figure}
 
+\newpage
+\section{Aplikacja Mobilna}
+Front-end naszego systemu zostanie zrealizowany jako natywna aplikacja mobilna na system Android. Aplikacja będzie stanowiła główny interfejs dla użytkownika, umożliwiając interakcję z danymi dostarczanymi przez API backendowe. Zgodnie z założeniami, do jej stworzenia wykorzystamy język \textbf{Kotlin} oraz nowoczesny toolkit UI – \textbf{Jetpack Compose}.
+
+\subsection{Główne moduły i ekrany}
+Struktura nawigacji aplikacji została podzielona na kilka kluczowych obszarów funkcjonalnych:
+
+\subsubsection{Moduł Autentykacji}
+Odpowiada za zarządzanie dostępem do aplikacji.
+\begin{itemize}
+    \item \textbf{Ekran Startowy}: Pierwszy widok witający użytkownika, pozwalający na wybór między logowaniem a rejestracją.
+    \item \textbf{Ekran Rejestracji/Logowania}: Formularze umożliwiające wprowadzenie danych (nickname, hasło). Moduł ten będzie obsługiwał walidację danych wejściowych po stronie klienta oraz bezpieczne przechowywanie otrzymanego od backendu tokena autoryzacyjnego.
+\end{itemize}
+
+\subsubsection{Moduł Profilu Użytkownika}
+Centrum informacji o postępach gracza.
+\begin{itemize}
+    \item Wyświetlanie awatara oraz nazwy użytkownika.
+    \item Prezentacja statystyk: aktualny \texttt{streak} oraz historia zdobytych punktów doświadczenia.
+    \item Historia ukończonych kursów i quizów.
+\end{itemize}
+
+\subsubsection{System Nauki (Learning Path)}
+Rdzeń aplikacji, realizujący przepływ wiedzy od kursu do sprawdzenia wiedzy.
+\begin{itemize}
+    \item \textbf{Lista Kursów}: Ekran prezentujący dostępne kursy  wraz z paskiem postępu.
+    \item \textbf{Ekran Lekcji i Slajdów}: Widok szczegółowy lekcji. Slajdy będą wyświetlane sekwencyjnie. Aplikacja będzie obsługiwać renderowanie tekstu oraz ładowanie obrazów z sieci.
+    \item \textbf{Przepływ (Flow)}: Użytkownik będzie mógł przejść do następnego slajdu/lekcji dopiero po zapoznaniu się z obecnym, co wymusza liniowy proces nauki.
+\end{itemize}
+
+\subsubsection{Moduł Quizów}
+Interfejs do weryfikacji wiedzy, obsługujący logikę pytań zdefiniowanych w bazie danych.
+\begin{itemize}
+    \item \textbf{Ekran Quizu}: Dynamiczny widok obsługujący dwa typy pytań:
+        \begin{itemize}
+            \item \textit{Zamknięte}: Lista opcji wyboru na podstawie danych z bazy.
+            \item \textit{Otwarte}: Pola tekstowe/numeryczne.
+        \end{itemize}
+    \item \textbf{Ekran Wyników}: Po zakończeniu quizu aplikacja wyśle odpowiedzi do API, a następnie wyświetli uzyskany wynik, zdobytą liczbę punktów doświadczenia oraz informację o ewentualnej aktualizacji streaku.
+    \item \textbf{Tryb Samodzielnej Nauki}: Osobny ekran pozwalający na uruchomienie losowych quizów bez powiązania z konkretną lekcją, w celu utrwalenia wiedzy.
+\end{itemize}
+
+\subsubsection{Forum Dyskusyjne}
+Społecznościowy aspekt aplikacji.
+\begin{itemize}
+    \item \textbf{Lista Wątków}: Wyświetlanie postów (\textbf{Post}) z możliwością filtrowania po tagach (\textbf{Tag}).
+    \item \textbf{Szczegóły Posta}: Widok pojedynczego wątku wraz z drzewiastą strukturą komentarzy (\textbf{Comment}).
+    \item \textbf{Interakcje}: Możliwość dodawania nowych postów, komentowania oraz dodawania reakcji (upvote) do treści innych użytkowników.
+\end{itemize}
+
+\subsection{Komunikacja i obsługa błędów}
+Aplikacja zostanie wyposażona w globalny mechanizm obsługi błędów:
+\begin{itemize}
+    \item \textbf{Brak połączenia z internetem}: Wyświetlenie odpowiedniego komunikatu i zablokowanie akcji wymagających synchronizacji z API.
+    \item \textbf{Obsługa błędów HTTP}: Interpretacja kodów błędów (np. 401 Unauthorized - wymuszenie wylogowania, 404 Not Found - odpowiedni ekran błędu).
+\end{itemize}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.9\textwidth]{mobile_architecture.png}
+    \caption{Diagram UML dla aplikacji mobilnej}
+    \label{fig:mobileArchitecture}
+\end{figure}
 
 \end{document}
 
