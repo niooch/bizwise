@@ -211,8 +211,124 @@ Aby zabezpieczyć aplikację przed nieautoryzowanym dostępem, wprowadzimy syste
 \end{itemize}
 Dodatkowo, jeżeli użytkownik chciałby edytować/usunąć swój post/komentarz na forum, będzie wymagane sprawdzenie czy jest on autorem danego postu/komentarza.
 
-\subsection{Endpointy API}
-%TODO tutaj dawaj endpointy @WiktorAPI
+\subsection{Endpointy (API)}
+
+Zestaw endpointów REST API obsługujących logikę biznesową aplikacji.
+
+\subsubsection{Moduł Uwierzytelniania (Auth)}
+Obsługa sesji użytkownika oraz bezpieczeństwa dostępu.
+\begin{itemize}
+    \item \textbf{POST} \texttt{/api/auth/register}: Rejestracja nowego użytkownika
+        \begin{itemize}
+            \item Wymagane dane: \texttt{nickname}, \texttt{password}
+        \end{itemize}
+    \item \textbf{POST} \texttt{/api/auth/login}: Logowanie do systemu
+        \begin{itemize}
+            \item Zwraca: token sesyjny (JWT)
+        \end{itemize}
+    \item \textbf{POST} \texttt{/api/auth/logout}: Wylogowanie
+        \begin{itemize}
+            \item Działanie: unieważnienie tokenu sesyjnego
+        \end{itemize}
+\end{itemize}
+
+\subsubsection{Moduł Użytkownika i Gamifikacji}
+Zarządzanie danymi profilowymi oraz wyświetlanie postępów.
+\begin{itemize}
+    \item \textbf{GET} \texttt{/api/users/me}: Pobiera dane zalogowanego użytkownika
+        \begin{itemize}
+            \item Zwraca: awatar, nickname, obliczony EXP, aktualny streak
+        \end{itemize}
+    \item \textbf{GET} \texttt{/api/users/me/progress}: Pobiera historię nauki
+        \begin{itemize}
+            \item Zwraca: listę ID ukończonych lekcji i kursów (do wizualizacji postępów)
+        \end{itemize}
+    \item \textbf{PATCH} \texttt{/api/users/me/avatar}: Aktualizacja awatara
+        \begin{itemize}
+            \item Payload: \texttt{\{ "avatar\_id": "new\_id" \}}
+        \end{itemize}
+\end{itemize}
+
+\subsubsection{Moduł Edukacyjny (Kursy i Lekcje)}
+Implementacja mechanizmu \textit{lazy loading} – treści pobierane są stopniowo.
+\begin{itemize}
+    \item \textbf{GET} \texttt{/api/courses}: Pobiera katalog dostępnych kursów
+        \begin{itemize}
+            \item Funkcje: obsługuje filtrowanie i sortowanie
+        \end{itemize}
+    \item \textbf{GET} \texttt{/api/courses/\{id\}}: Pobiera szczegóły kursu
+        \begin{itemize}
+            \item Zwraca: strukturę lekcji (tytuły, kolejność, status blokady)
+            \item Uwaga: w tym momencie nie pobieramy jeszcze treści slajdów.
+        \end{itemize}
+    \item \textbf{GET} \texttt{/api/lessons/\{id\}}: Pobiera pełną zawartość lekcji
+        \begin{itemize}
+            \item Zwraca: slajdy, tekst, multimedia, ID przypisanego quizu
+        \end{itemize}
+    \item \textbf{POST} \texttt{/api/lessons/\{id\}/complete}: Oznaczenie lekcji jako ukończonej
+        \begin{itemize}
+            \item Działanie: aktualizacja tabeli \texttt{UserProgress}, odblokowanie kolejnego modułu
+        \end{itemize}
+\end{itemize}
+
+\subsubsection{Moduł Weryfikacji (Quizy)}
+Silnik weryfikacji wiedzy typu \textit{Black Box} – klient nie otrzymuje informacji o poprawnych odpowiedziach w momencie pobierania pytań.
+\begin{itemize}
+    \item \textbf{GET} \texttt{/api/quizzes/\{id\}}: Pobiera quiz
+        \begin{itemize}
+            \item Zwraca: pytania i opcje odpowiedzi
+            \item Bezpieczeństwo: serwer usuwa pola \texttt{is\_correct} oraz \texttt{pattern}
+        \end{itemize}
+    \item \textbf{POST} \texttt{/api/quizzes/\{id\}/submit}: Przesyła odpowiedzi do oceny
+        \begin{itemize}
+            \item Działanie: obliczenie wyniku i zwrot rezultatu z feedbackiem do użytkownika
+            \item Payload przykładowy:
+            \begin{verbatim}
+{
+  "answers": [
+    { "question_id": 1, "selected_option_id": 10 },
+    { "question_id": 2, "numeric_answer": 1995 }
+  ]
+}
+            \end{verbatim}
+        \end{itemize}
+\end{itemize}
+
+\subsubsection{Moduł Społecznościowy (Forum)}
+Zestaw funkcjonalności umożliwiający interakcję między użytkownikami.
+\begin{itemize}
+    \item \textbf{GET} \texttt{/api/forum/posts}: Lista postów
+        \begin{itemize}
+            \item Funkcje: paginacja, filtrowanie po tagach
+        \end{itemize}
+    \item \textbf{POST} \texttt{/api/forum/posts}: Utworzenie posta
+        \begin{itemize}
+            \item Wymagane: tytuł, treść, tagi
+        \end{itemize}
+    \item \textbf{GET} \texttt{/api/forum/posts/\{id\}}: Pobranie posta
+        \begin{itemize}
+            \item Zwraca: treść posta wraz z drzewem komentarzy
+        \end{itemize}
+    \item \textbf{PUT} \texttt{/api/forum/posts/\{id\}}: Edycja posta
+        \begin{itemize}
+            \item Uprawnienia: dostępne tylko dla autora
+        \end{itemize}
+    \item \textbf{DELETE} \texttt{/api/forum/posts/\{id\}}: Usunięcie posta
+    \item \textbf{POST} \texttt{.../posts/\{id\}/comments}: Dodanie komentarza
+        \begin{itemize}
+            \item Opcje: komentarz do posta lub odpowiedź na inny komentarz
+        \end{itemize}
+    \item \textbf{DELETE} \texttt{/api/forum/comments/\{id\}}: Usunięcie komentarza
+    \item \textbf{POST} \texttt{.../posts/\{id\}/react}: Reakcja na post
+        \begin{itemize}
+            \item Działanie: przełącznik (toggle) reakcji (np. LIKE)
+        \end{itemize}
+    \item \textbf{POST} \texttt{.../comments/\{id\}/react}: Reakcja na komentarz
+    \item \textbf{GET} \texttt{/api/forum/tags}: Lista tagów
+        \begin{itemize}
+            \item Zwraca: listę dostępnych tagów tematycznych
+        \end{itemize}
+\end{itemize}
 
 \section{Interfejs administratora}
 Django posiada wbudowany interfejs administratora, który pozwala na zarządzanie bazą danych bez konieczności tworzenia własnego panelu. W naszym projekcie wykorzystamy ten interfejs do zarządzania w szególności kursami oraz quizami.\\
@@ -297,5 +413,3 @@ Aplikacja zostanie wyposażona w globalny mechanizm obsługi błędów:
 \end{figure}
 
 \end{document}
-
-
