@@ -25,11 +25,17 @@ source django/bin/activate
 ```bash
 pip install -r req.txt
 ```
-4. Uruchomić serwer deweloperski
+4. Należy skonfigurować hasła, etc. w `env.EXAMPLE` (dla naszych dewów: `scp bizWise:~/env .env`, po wcześnijszym [skonfigurowaniu](mailto:jakub@jkogut.pl) `ssh`)
+5. Uruchomić i skonfigurować bazę danych `PostgreSQL` -- stworzyć baze o nazwie jak w `.env`, podobnie usera oraz nadać mu wszelkie prawa, albo przekazać własność nad bazą.
+6. Wykonać migrace danych i uruchomić serwer deweloperski
 ```bash
+python manage.py makemigrations
+python manage.py migrate
 python manage.py runserver
 ```
 Zarządzanie bazą danych/strukturą odbywa się poprzez standardowe `manage.py`. Więcej informacji można znaleźć w [dokumentacji Django](https://docs.djangoproject.com/en/6.0/).
+### Konfiguracja SSH:
+Należy umieścić z dane pliku `backend/sshConf` w pliku `~/.ssh/config`, aby umożliwić połączenie z serwerem produkcyjnym.
 ### Deployment 
 Projekt kożysta z `CI/CD` do automatycznego wdrażania backendu na serwerze przy użyciu *Github Actions*.
 
