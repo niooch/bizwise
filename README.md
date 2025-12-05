@@ -23,9 +23,9 @@ source django/bin/activate
 ```
 3. Zainstalować wymagane pakiety
 ```bash
-pip install -r req.txt
+pip install -r requirements.txt
 ```
-4. Należy skonfigurować hasła, etc. w `env.EXAMPLE` (dla naszych dewów: `scp bizWise:~/env .env`, po wcześnijszym [skonfigurowaniu](mailto:jakub@jkogut.pl) `ssh`)
+4. Należy skonfigurować hasła, etc. w `env.EXAMPLE` (dla naszych dewów: `scp bizwise:~/.env ./.env`, po wcześnijszym [skonfigurowaniu](mailto:jakub@jkogut.pl) `ssh`)
 5. Uruchomić i skonfigurować bazę danych `PostgreSQL` -- stworzyć baze o nazwie jak w `.env`, podobnie usera oraz nadać mu wszelkie prawa, albo przekazać własność nad bazą.
 6. Wykonać migrace danych i uruchomić serwer deweloperski
 ```bash
