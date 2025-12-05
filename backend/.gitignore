@@ -1,0 +1,6 @@
+django/
+__pycache__/
+*.py[cod]
+.env
+/static/
+media/
