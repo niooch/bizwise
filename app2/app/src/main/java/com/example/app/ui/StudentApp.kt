@@ -9,6 +9,7 @@ import androidx.compose.ui.Modifier
 @Composable
 fun StudentApp() {
     var currentScreen by remember { mutableStateOf("WELCOME") }
+    var userToken by remember { mutableStateOf<String?>(null) }
 
     Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
         when (currentScreen) {
@@ -17,10 +18,18 @@ fun StudentApp() {
                 onRegisterClick = { currentScreen = "REGISTER" }
             )
             "LOGIN" -> LoginScreen(
-                onBack = { currentScreen = "WELCOME" }
+                onBack = { currentScreen = "WELCOME" },
+
+                onLoginSuccess = { token ->
+                    userToken = token
+                    currentScreen = "USERSCREEN"
+                }
             )
             "REGISTER" -> RegisterScreen(
                 onBack = { currentScreen = "WELCOME" }
+            )
+            "USERSCREEN" -> UserScreen(
+                token = userToken!! //TODO: poprawić logike, !! niebezpieczne
             )
         }
     }

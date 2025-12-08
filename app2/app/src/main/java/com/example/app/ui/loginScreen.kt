@@ -15,7 +15,10 @@ import com.example.app.data.RetrofitClient
 import kotlinx.coroutines.launch
 
 @Composable
-fun LoginScreen(onBack: () -> Unit) {
+fun LoginScreen(
+    onBack: () -> Unit,
+    onLoginSuccess: (String) -> Unit
+) {
     var nicknameInput by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var isLoading by remember { mutableStateOf(false) }
@@ -62,6 +65,7 @@ fun LoginScreen(onBack: () -> Unit) {
                             if (response.isSuccessful && response.body() != null) {
                                 val token = response.body()!!.access
                                 Toast.makeText(context, "Zalogowano! Token: ${token.take(10)}...", Toast.LENGTH_LONG).show()
+                                onLoginSuccess(token)
                             } else {
                                 Toast.makeText(context, "Błąd logowania (złe hasło?)", Toast.LENGTH_LONG).show()
                                 //Toast.makeText(context, "DEBUG CZY TO TU", Toast.LENGTH_LONG).show()

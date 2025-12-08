@@ -1,9 +1,12 @@
 package com.example.app.data
 
+import android.R
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import retrofit2.http.Body
+import retrofit2.http.GET
 import retrofit2.http.POST
+import retrofit2.http.Header
 
 data class RegisterRequest(
     val nickname: String,
@@ -21,12 +24,25 @@ data class TokenResponse(
     val access: String
 )
 
+data class InformationAboutMe(
+    val id: Integer,
+    val username: String,
+    val avatar: String,
+    val exp: String,
+    val streak: String
+)
+
 interface ApiService {
-    @POST("auth/register/")
+    @POST("auth/register/") //Option to register
     suspend fun registerUser(@Body request: RegisterRequest): retrofit2.Response<Any>
 
-    @POST("auth/login/")
+    @POST("auth/login/") //Option to lig into app
     suspend fun loginUser(@Body request: LoginRequest): retrofit2.Response<TokenResponse>
+
+    @GET("auth/me") //Option to get informations about log in user
+    suspend fun informationAboutMe(
+        @Header("Authorization") token: String
+    ): retrofit2.Response<InformationAboutMe>
 }
 
 object RetrofitClient {
