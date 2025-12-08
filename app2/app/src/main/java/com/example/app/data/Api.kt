@@ -12,6 +12,7 @@ data class RegisterRequest(
 
 data class LoginRequest(
     val nickname: String,
+    val username: String, //TODO: fixError - delete username
     val password: String
 )
 
