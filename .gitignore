@@ -4,3 +4,10 @@
 *.out
 *.synctex.gz
 *.fls
+.idea/
+.gradle/
+build/
+app2/build/
+*.iml
+local.properties
+.DS_Store
