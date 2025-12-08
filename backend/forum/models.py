@@ -22,6 +22,12 @@ class Post(models.Model):
     title = models.CharField(max_length=255)
     content = models.TextField()
     creation_date = models.DateTimeField(auto_now_add=True)
+    tags = models.ManyToManyField(
+        "Tag",
+        through="PostTag",
+        related_name="posts",
+        blank=True,
+    )
 
     def __str__(self) -> str:
         return self.title

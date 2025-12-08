@@ -11,7 +11,7 @@ class TagSerializer(serializers.ModelSerializer):
 
 class PostListSerializer(serializers.ModelSerializer):
     author_nickname = serializers.CharField(source="author.username", read_only=True)
-    tags = TagSerializer(many=True, source="post_tags__tag", read_only=True)
+    tags = TagSerializer(many=True, read_only=True)
     comments_count = serializers.IntegerField(read_only=True)
     reactions_count = serializers.IntegerField(read_only=True)
 
@@ -23,6 +23,7 @@ class PostListSerializer(serializers.ModelSerializer):
             "content",
             "creation_date",
             "author_nickname",
+            "tags",
             "comments_count",
             "reactions_count",
         ]
@@ -79,7 +80,7 @@ class CommentTreeSerializer(serializers.ModelSerializer):
 
 class PostDetailSerializer(serializers.ModelSerializer):
     author_nickname = serializers.CharField(source="author.username", read_only=True)
-    tags = TagSerializer(many=True, source="post_tags__tag", read_only=True)
+    tags = TagSerializer(many=True, read_only=True)
     comments = CommentTreeSerializer(many=True, read_only=True)
 
     class Meta:
