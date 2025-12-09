@@ -1,5 +1,5 @@
 # Aplikacja BizWise 
-Aplikacja mobilna na system *Android* pomagająca w nauce zarządzania finansami osobistymi.
+Aplikacja mobilna na system *Android* pomagająca w nauce, przeznaczona dla studentów Uniwersytetu Ekonomicznego we Wrocławiu.
 
 ## Struktura
 Aplikacja składa się z części frontendowej napisanej w `Kotlin` przy użyciu `Android Studio` oraz części backendowej napisanej w `Python` z wykorzystaniem frameworka `Django`.
