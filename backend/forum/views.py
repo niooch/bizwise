@@ -1,9 +1,16 @@
 from django.db.models import Count, Q
 from django.shortcuts import get_object_or_404
 
-from rest_framework import generics, permissions, status, filters
+from rest_framework import generics, permissions, status, filters, serializers
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from drf_spectacular.utils import (
+    extend_schema,
+    extend_schema_view,
+    OpenApiParameter,
+    inline_serializer,
+)
+from drf_spectacular.types import OpenApiTypes
 
 from .models import (
     Post,
@@ -23,6 +30,31 @@ from .serializers import (
 from .permissions import IsAuthorOrReadOnly
 
 
+@extend_schema_view(
+    get=extend_schema(
+        tags=["forum"],
+        parameters=[
+            OpenApiParameter(
+                name="tag",
+                type=OpenApiTypes.INT,
+                location=OpenApiParameter.QUERY,
+                description="Filter posts by tag id",
+            ),
+            OpenApiParameter(
+                name="search",
+                type=str,
+                location=OpenApiParameter.QUERY,
+                description="Search in title/content",
+            ),
+        ],
+        responses=PostListSerializer,
+    ),
+    post=extend_schema(
+        tags=["forum"],
+        request=PostCreateUpdateSerializer,
+        responses=PostCreateUpdateSerializer,
+    ),
+)
 class PostListCreateView(generics.ListCreateAPIView):
     """
     GET /api/forum/posts
@@ -63,6 +95,11 @@ class PostListCreateView(generics.ListCreateAPIView):
         return ctx
 
 
+@extend_schema_view(
+    get=extend_schema(tags=["forum"], responses=PostDetailSerializer),
+    put=extend_schema(tags=["forum"], request=PostCreateUpdateSerializer, responses=PostCreateUpdateSerializer),
+    delete=extend_schema(tags=["forum"], responses=None),
+)
 class PostDetailView(generics.RetrieveUpdateDestroyAPIView):
     """
     GET /api/forum/posts/{id}
@@ -86,6 +123,17 @@ class PostDetailView(generics.RetrieveUpdateDestroyAPIView):
         return ctx
 
 
+@extend_schema(
+    tags=["forum"],
+    request=inline_serializer(
+        name="CommentCreateRequest",
+        fields={
+            "content": serializers.CharField(),
+            "parent_comment_id": serializers.IntegerField(required=False),
+        },
+    ),
+    responses=CommentTreeSerializer,
+)
 class CommentCreateView(APIView):
     """
     POST /api/forum/posts/{id}/comments
@@ -120,6 +168,10 @@ class CommentCreateView(APIView):
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
 
+@extend_schema(
+    tags=["forum"],
+    responses=None,
+)
 class CommentDeleteView(APIView):
     """
     DELETE /api/forum/comments/{id}
@@ -138,6 +190,19 @@ class CommentDeleteView(APIView):
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
+@extend_schema(
+    tags=["forum"],
+    request=inline_serializer(
+        name="PostReactRequest",
+        fields={"reaction_type": serializers.CharField()},
+    ),
+    responses={
+        200: inline_serializer(
+            name="ReactResponse",
+            fields={"status": serializers.CharField()},
+        )
+    },
+)
 class PostReactView(APIView):
     """
     POST /api/forum/posts/{id}/react
@@ -172,6 +237,19 @@ class PostReactView(APIView):
         return Response({"status": toggled}, status=status.HTTP_200_OK)
 
 
+@extend_schema(
+    tags=["forum"],
+    request=inline_serializer(
+        name="CommentReactRequest",
+        fields={"reaction_type": serializers.CharField()},
+    ),
+    responses={
+        200: inline_serializer(
+            name="CommentReactResponse",
+            fields={"status": serializers.CharField()},
+        )
+    },
+)
 class CommentReactView(APIView):
     """
     POST /api/forum/comments/{id}/react
@@ -205,6 +283,10 @@ class CommentReactView(APIView):
         return Response({"status": toggled}, status=status.HTTP_200_OK)
 
 
+@extend_schema(
+    tags=["forum"],
+    responses=TagSerializer,
+)
 class TagListView(generics.ListAPIView):
     """
     GET /api/forum/tags

@@ -1,9 +1,10 @@
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 
-from rest_framework import permissions, status
+from rest_framework import permissions, status, serializers
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from drf_spectacular.utils import extend_schema, inline_serializer
 
 from .models import Quiz, Question, AnswerOption, QuizResult
 from .serializers import QuizDetailSerializer, QuizSubmitSerializer
@@ -34,6 +35,10 @@ def check_numeric_answer(pattern: str, value: float) -> bool:
             return False
 
 
+@extend_schema(
+    tags=["quizzes"],
+    responses=QuizDetailSerializer,
+)
 class QuizDetailView(APIView):
     """
     GET /api/quizzes/{id}
@@ -50,6 +55,21 @@ class QuizDetailView(APIView):
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 
+@extend_schema(
+    tags=["quizzes"],
+    request=QuizSubmitSerializer,
+    responses={
+        200: inline_serializer(
+            name="QuizSubmitResponse",
+            fields={
+                "score": serializers.FloatField(),
+                "exp_gained": serializers.IntegerField(),
+                "questions_total": serializers.IntegerField(),
+                "correct_answers": serializers.IntegerField(),
+            },
+        )
+    },
+)
 class QuizSubmitView(APIView):
     """
     POST /api/quizzes/{id}/submit

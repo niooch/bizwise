@@ -1,10 +1,15 @@
 from django.utils import timezone
-from rest_framework import generics, permissions, status
+from rest_framework import generics, permissions, status, serializers
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenBlacklistView
 from rest_framework_simplejwt.tokens import RefreshToken
+from drf_spectacular.utils import (
+    extend_schema,
+    inline_serializer,
+    OpenApiExample,
+)
 
 from django.contrib.auth import get_user_model
 
@@ -25,6 +30,33 @@ User = get_user_model()
 # Auth endpoints
 # -----------------------
 
+@extend_schema(
+    tags=["auth"],
+    request=RegisterSerializer,
+    responses={
+        201: inline_serializer(
+            name="RegisterResponse",
+            fields={
+                "user": inline_serializer(
+                    name="RegisterResponseUser",
+                    fields={
+                        "id": serializers.IntegerField(),
+                        "nickname": serializers.CharField(),
+                    },
+                ),
+                "access": serializers.CharField(),
+                "refresh": serializers.CharField(),
+            },
+        )
+    },
+    examples=[
+        OpenApiExample(
+            "Register",
+            summary="Register and receive JWT pair",
+            value={"nickname": "alice", "password": "P@ssw0rd123"},
+        ),
+    ],
+)
 class RegisterView(generics.CreateAPIView):
     """
     POST /api/auth/register
@@ -51,6 +83,19 @@ class RegisterView(generics.CreateAPIView):
         return Response(data, status=status.HTTP_201_CREATED)
 
 
+@extend_schema(
+    tags=["auth"],
+    request=MyTokenObtainPairSerializer,
+    responses={
+        200: inline_serializer(
+            name="TokenPair",
+            fields={
+                "access": serializers.CharField(),
+                "refresh": serializers.CharField(),
+            },
+        )
+    },
+)
 class LoginView(TokenObtainPairView):
     """
     POST /api/auth/login
@@ -61,6 +106,14 @@ class LoginView(TokenObtainPairView):
     serializer_class = MyTokenObtainPairSerializer
 
 
+@extend_schema(
+    tags=["auth"],
+    request=inline_serializer(
+        name="LogoutRequest",
+        fields={"refresh": serializers.CharField()},
+    ),
+    responses={205: None},
+)
 class LogoutView(TokenBlacklistView):
     """
     POST /api/auth/logout
@@ -75,6 +128,10 @@ class LogoutView(TokenBlacklistView):
 # User endpoints
 # -----------------------
 
+@extend_schema(
+    tags=["users"],
+    responses=UserMeSerializer,
+)
 class MeView(generics.RetrieveAPIView):
     """
     GET /api/users/me
@@ -86,6 +143,10 @@ class MeView(generics.RetrieveAPIView):
         return self.request.user
 
 
+@extend_schema(
+    tags=["users"],
+    responses=UserProgressSerializer,
+)
 class MeProgressView(APIView):
     """
     GET /api/users/me/progress
@@ -109,6 +170,14 @@ class MeProgressView(APIView):
         return Response(serializer.data)
 
 
+@extend_schema(
+    tags=["users"],
+    request=AvatarUpdateSerializer,
+    responses={200: inline_serializer(
+        name="AvatarUpdateResponse",
+        fields={"status": serializers.CharField()},
+    )},
+)
 class MeAvatarView(APIView):
     """
     PATCH /api/users/me/avatar
@@ -126,4 +195,3 @@ class MeAvatarView(APIView):
         profile.save()
 
         return Response({"status": "ok"})
-

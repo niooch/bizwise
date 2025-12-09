@@ -1,9 +1,14 @@
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 
-from rest_framework import generics, permissions, status, filters
+from rest_framework import generics, permissions, status, filters, serializers
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from drf_spectacular.utils import (
+    extend_schema,
+    OpenApiParameter,
+    inline_serializer,
+)
 
 from .models import (
     Course,
@@ -23,6 +28,26 @@ from .serializers import (
 )
 
 
+@extend_schema(
+    tags=["courses"],
+    parameters=[
+        OpenApiParameter(
+            name="search",
+            description="Search courses by name",
+            required=False,
+            type=str,
+            location=OpenApiParameter.QUERY,
+        ),
+        OpenApiParameter(
+            name="ordering",
+            description="Order by name (e.g. name or -name)",
+            required=False,
+            type=str,
+            location=OpenApiParameter.QUERY,
+        ),
+    ],
+    responses=CourseListSerializer,
+)
 class CourseListView(generics.ListAPIView):
     """
     GET /api/courses
@@ -39,6 +64,10 @@ class CourseListView(generics.ListAPIView):
     ordering = ["name"]
 
 
+@extend_schema(
+    tags=["courses"],
+    responses=CourseDetailSerializer,
+)
 class CourseDetailView(APIView):
     """
     GET /api/courses/{id}
@@ -96,6 +125,10 @@ class CourseDetailView(APIView):
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 
+@extend_schema(
+    tags=["courses"],
+    responses=LessonDetailSerializer,
+)
 class LessonDetailView(APIView):
     """
     GET /api/lessons/{id}
@@ -123,6 +156,16 @@ class LessonDetailView(APIView):
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 
+@extend_schema(
+    tags=["courses"],
+    request=None,
+    responses={
+        200: inline_serializer(
+            name="LessonCompleteResponse",
+            fields={"status": serializers.CharField()},
+        )
+    },
+)
 class LessonCompleteView(APIView):
     """
     POST /api/lessons/{id}/complete
