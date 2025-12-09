@@ -95,11 +95,18 @@ class RegisterView(generics.CreateAPIView):
             },
         )
     },
+    examples=[
+        OpenApiExample(
+            "Login",
+            summary="Login with username (nickname) and password",
+            value={"username": "alice", "password": "P@ssw0rd123"},
+        )
+    ],
 )
 class LoginView(TokenObtainPairView):
     """
     POST /api/auth/login
-    Body: { "nickname": "...", "password": "..." }
+    Body: { "username": "...", "password": "..." } (username is the chosen nickname)
     Returns: { access, refresh }
     """
     permission_classes = [permissions.AllowAny]

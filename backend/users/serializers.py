@@ -45,19 +45,10 @@ class RegisterSerializer(serializers.Serializer):
 
 class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
     """
-    Allows login using 'nickname' field instead of 'username' in the payload.
-    PDF: POST /api/auth/login returns JWT. :contentReference[oaicite:2]{index=2}
+    Custom wrapper kept for schema consistency.
     """
 
     username_field = User.USERNAME_FIELD  # still 'username' internally
-
-    # Accept nickname in input and map to username
-    nickname = serializers.CharField(write_only=True, required=False)
-
-    def validate(self, attrs):
-        if "nickname" in attrs and "username" not in attrs:
-            attrs["username"] = attrs.pop("nickname")
-        return super().validate(attrs)
 
 
 class AvatarUpdateSerializer(serializers.Serializer):
@@ -117,4 +108,3 @@ class UserProgressSerializer(serializers.Serializer):
     """
     completed_courses = serializers.ListField(child=serializers.IntegerField())
     completed_lessons = serializers.ListField(child=serializers.IntegerField())
-

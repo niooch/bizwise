@@ -4,7 +4,7 @@ Base URL: `/api/` (JWT auth required unless noted). JWTs are issued via SimpleJW
 
 ## Auth & user (`/api/auth/…`)
 - `POST /auth/register/` — create account. Body: `{ "nickname": "...", "password": "..." }`. Returns created user `{id, nickname}` plus `access`/`refresh` tokens.
-- `POST /auth/login/` — obtain JWT tokens. Body: `{ "nickname": "...", "password": "..." }`. Returns `{ "access": "...", "refresh": "..." }`.
+- `POST /auth/login/` — obtain JWT tokens. Body: `{ "username": "...", "password": "..." }` (use the nickname chosen at registration as `username`). Returns `{ "access": "...", "refresh": "..." }`.
 - `POST /auth/logout/` — blacklist a refresh token. Body: `{ "refresh": "..." }`.
 - `GET /auth/me/` — current user profile. Returns `{ id, username, avatar, exp, streak }` where `avatar` is either `null` or `{ id, name, image_url }`; `streak` is `null` or `{ best_streak, begin_date, last_activity_date }`.
 - `GET /auth/me/progress/` — completion summary. Returns `{ completed_courses: [course_id], completed_lessons: [] }` (lessons placeholder for future expansion).
