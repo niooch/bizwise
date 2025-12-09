@@ -5,6 +5,7 @@ from rest_framework import permissions, status, serializers
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from drf_spectacular.utils import extend_schema, inline_serializer
+from django.db.models import F
 
 from .models import Quiz, Question, AnswerOption, QuizResult
 from .serializers import QuizDetailSerializer, QuizSubmitSerializer
@@ -154,3 +155,76 @@ class QuizSubmitView(APIView):
             },
             status=status.HTTP_200_OK,
         )
+
+
+@extend_schema(
+    tags=["quizzes"],
+    responses=inline_serializer(
+        name="QuizResultResponse",
+        fields={
+            "best_score": serializers.FloatField(),
+            "last_completion_date": serializers.DateTimeField(allow_null=True),
+        },
+    ),
+)
+class QuizResultView(APIView):
+    """
+    GET /api/quizzes/{id}/results
+    Return current user's best score and last completion date for the quiz.
+    """
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request, pk: int):
+        quiz = get_object_or_404(Quiz, pk=pk)
+        try:
+            result = QuizResult.objects.get(user=request.user, quiz=quiz)
+            payload = {
+                "best_score": result.best_score,
+                "last_completion_date": result.last_completion_date,
+            }
+        except QuizResult.DoesNotExist:
+            payload = {"best_score": 0.0, "last_completion_date": None}
+        return Response(payload, status=status.HTTP_200_OK)
+
+
+@extend_schema(
+    tags=["quizzes"],
+    responses=inline_serializer(
+        name="QuizLeaderboardResponse",
+        fields={
+            "leaderboard": serializers.ListSerializer(
+                child=inline_serializer(
+                    name="QuizLeaderboardEntry",
+                    fields={
+                        "user_id": serializers.IntegerField(),
+                        "username": serializers.CharField(),
+                        "best_score": serializers.FloatField(),
+                    },
+                )
+            )
+        },
+    ),
+)
+class QuizLeaderboardView(APIView):
+    """
+    GET /api/quizzes/{id}/leaderboard
+    Top scores for a quiz (best_score desc, limited to 10).
+    """
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request, pk: int):
+        quiz = get_object_or_404(Quiz, pk=pk)
+        results = (
+            QuizResult.objects.filter(quiz=quiz)
+            .select_related("user")
+            .order_by("-best_score", "-last_completion_date")[:10]
+        )
+        leaderboard = [
+            {
+                "user_id": r.user_id,
+                "username": r.user.username,
+                "best_score": r.best_score,
+            }
+            for r in results
+        ]
+        return Response({"leaderboard": leaderboard}, status=status.HTTP_200_OK)

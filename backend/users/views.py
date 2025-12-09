@@ -3,7 +3,11 @@ from rest_framework import generics, permissions, status, serializers
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from rest_framework_simplejwt.views import TokenObtainPairView, TokenBlacklistView
+from rest_framework_simplejwt.views import (
+    TokenObtainPairView,
+    TokenBlacklistView,
+    TokenRefreshView,
+)
 from rest_framework_simplejwt.tokens import RefreshToken
 from drf_spectacular.utils import (
     extend_schema,
@@ -19,6 +23,7 @@ from .serializers import (
     RegisterSerializer,
     MyTokenObtainPairSerializer,
     AvatarUpdateSerializer,
+    AvatarSerializer,
     UserMeSerializer,
     UserProgressSerializer,
 )
@@ -131,6 +136,23 @@ class LogoutView(TokenBlacklistView):
     permission_classes = [permissions.IsAuthenticated]
 
 
+@extend_schema(
+    tags=["auth"],
+    request=inline_serializer(
+        name="TokenRefreshRequest",
+        fields={"refresh": serializers.CharField()},
+    ),
+    responses={
+        200: inline_serializer(
+            name="TokenRefreshResponse",
+            fields={"access": serializers.CharField()},
+        )
+    },
+)
+class RefreshView(TokenRefreshView):
+    permission_classes = [permissions.AllowAny]
+
+
 # -----------------------
 # User endpoints
 # -----------------------
@@ -175,6 +197,20 @@ class MeProgressView(APIView):
         serializer = UserProgressSerializer(data=data)
         serializer.is_valid(raise_exception=True)
         return Response(serializer.data)
+
+
+@extend_schema(
+    tags=["users"],
+    responses=AvatarSerializer(many=True),
+)
+class AvatarListView(generics.ListAPIView):
+    """
+    GET /api/auth/avatars
+    List available avatars.
+    """
+    queryset = Avatar.objects.all().order_by("id")
+    serializer_class = AvatarSerializer
+    permission_classes = [permissions.AllowAny]
 
 
 @extend_schema(

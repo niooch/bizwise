@@ -57,6 +57,12 @@ class AvatarUpdateSerializer(serializers.Serializer):
     )
 
 
+class AvatarSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Avatar
+        fields = ["id", "name", "image_url"]
+
+
 class UserMeSerializer(serializers.ModelSerializer):
     avatar = serializers.SerializerMethodField()
     exp = serializers.SerializerMethodField()

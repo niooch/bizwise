@@ -193,6 +193,53 @@ class CommentDeleteView(APIView):
 @extend_schema(
     tags=["forum"],
     request=inline_serializer(
+        name="CommentUpdateRequest",
+        fields={"content": serializers.CharField()},
+    ),
+    responses=inline_serializer(
+        name="CommentUpdateResponse",
+        fields={
+            "id": serializers.IntegerField(),
+            "content": serializers.CharField(),
+            "creation_date": serializers.DateTimeField(),
+        },
+    ),
+)
+class CommentDetailView(APIView):
+    """
+    PATCH /api/forum/comments/{id}
+    Only author can edit their comment.
+    """
+    permission_classes = [permissions.IsAuthenticated]
+
+    def patch(self, request, pk: int):
+        comment = get_object_or_404(Comment, pk=pk)
+        if comment.author != request.user:
+            return Response(
+                {"detail": "You are not the author of this comment."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+        content = request.data.get("content")
+        if not content:
+            return Response(
+                {"detail": "content is required"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        comment.content = content
+        comment.save(update_fields=["content"])
+        return Response(
+            {
+                "id": comment.id,
+                "content": comment.content,
+                "creation_date": comment.creation_date,
+            },
+            status=status.HTTP_200_OK,
+        )
+
+
+@extend_schema(
+    tags=["forum"],
+    request=inline_serializer(
         name="PostReactRequest",
         fields={"reaction_type": serializers.CharField()},
     ),
@@ -239,6 +286,35 @@ class PostReactView(APIView):
 
 @extend_schema(
     tags=["forum"],
+    responses=inline_serializer(
+        name="PostReactionsSummary",
+        fields={
+            "reactions": serializers.DictField(
+                child=serializers.IntegerField(), allow_empty=True
+            )
+        },
+    ),
+)
+class PostReactionsSummaryView(APIView):
+    """
+    GET /api/forum/posts/{id}/reactions
+    Aggregated reaction counts per type for a post.
+    """
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request, pk: int):
+        post = get_object_or_404(Post, pk=pk)
+        counts = (
+            PostReaction.objects.filter(post=post)
+            .values("reaction__reaction_type")
+            .annotate(total=Count("id"))
+        )
+        data = {item["reaction__reaction_type"]: item["total"] for item in counts}
+        return Response({"reactions": data}, status=status.HTTP_200_OK)
+
+
+@extend_schema(
+    tags=["forum"],
     request=inline_serializer(
         name="CommentReactRequest",
         fields={"reaction_type": serializers.CharField()},
@@ -281,6 +357,35 @@ class CommentReactView(APIView):
             toggled = "added"
 
         return Response({"status": toggled}, status=status.HTTP_200_OK)
+
+
+@extend_schema(
+    tags=["forum"],
+    responses=inline_serializer(
+        name="CommentReactionsSummary",
+        fields={
+            "reactions": serializers.DictField(
+                child=serializers.IntegerField(), allow_empty=True
+            )
+        },
+    ),
+)
+class CommentReactionsSummaryView(APIView):
+    """
+    GET /api/forum/comments/{id}/reactions
+    Aggregated reaction counts per type for a comment.
+    """
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request, pk: int):
+        comment = get_object_or_404(Comment, pk=pk)
+        counts = (
+            CommentReaction.objects.filter(comment=comment)
+            .values("reaction__reaction_type")
+            .annotate(total=Count("id"))
+        )
+        data = {item["reaction__reaction_type"]: item["total"] for item in counts}
+        return Response({"reactions": data}, status=status.HTTP_200_OK)
 
 
 @extend_schema(
