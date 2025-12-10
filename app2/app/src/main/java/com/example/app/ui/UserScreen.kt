@@ -15,7 +15,8 @@ import com.example.app.data.RetrofitClient
 @Composable
 fun UserScreen(
     token: String,
-    onProfileClick: () -> Unit
+    onProfileClick: () -> Unit,
+    onCoursesClick: () -> Unit
 ) {
     var userData by remember { mutableStateOf<InformationAboutMe?>(null) }
 
@@ -37,7 +38,7 @@ fun UserScreen(
                 // Ikona K (np. Kursy)
                 NavigationBarItem(
                     selected = false,
-                    onClick = { /* TODO: Logika przejścia do Kursów (K) */ },
+                    onClick = onCoursesClick,
                     icon = {
                         Text("K", fontSize = 20.sp, fontWeight = FontWeight.Bold)
                     },
@@ -104,8 +105,6 @@ fun UserScreen(
                         fontSize = 28.sp,
                         fontWeight = FontWeight.Bold
                     )
-                    // Opcjonalnie: Wyświetlenie innych danych z modelu
-                    // Text("Streak: ${userData.streak}", fontSize = 16.sp)
                 } else {
                     // Jeśli dane się jeszcze ładują lub jest błąd
                     Text("Witaj Studencie", fontSize = 28.sp, fontWeight = FontWeight.Bold)

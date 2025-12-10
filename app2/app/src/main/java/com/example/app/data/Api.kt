@@ -31,6 +31,19 @@ data class InformationAboutMe(
     val streak: String
 )
 
+data class singleCourse(
+    val id: Integer,
+    val name: String
+)
+
+data class singleLesson(
+    val id: Integer,
+    val name: String,
+    val order: Integer,
+    val locked: Boolean,
+    val completed: Boolean
+)
+
 interface ApiService {
     @POST("auth/register/") //Option to register
     suspend fun registerUser(@Body request: RegisterRequest): retrofit2.Response<Any>
@@ -47,6 +60,16 @@ interface ApiService {
     suspend fun informationAboutMe(
         @Header("Authorization") token: String
     ): retrofit2.Response<InformationAboutMe>
+
+    @GET("courses/")
+    suspend fun allCourses(
+        @Header("Authorization") token: String
+    ): retrofit2.Response<List<singleCourse>>
+
+    @GET("courses/{id}")
+    suspend fun singleLesson(
+        @Header("Authorization") token: String
+    ): retrofit2.Response<List<singleLesson>>
 }
 
 object RetrofitClient {

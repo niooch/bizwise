@@ -42,6 +42,9 @@ fun StudentApp() {
                         token = userToken!!,
                         onProfileClick = {
                             currentScreen = "PROFILE"
+                        },
+                        onCoursesClick = {
+                            currentScreen = "ALLCOURSES"
                         }
                     )
                 } else {
@@ -57,12 +60,21 @@ fun StudentApp() {
                             currentScreen = "USERSCREEN"
                         },
                         onLogout = {
-                            // TODO: Tu wstawisz swoją logikę wylogowania (API call z drugim tokenem)
                             currentScreen = "WELCOME"
                         }
                     )
                 } else {
                     currentScreen = "WELCOME"
+                }
+            }
+            "ALLCOURSES" -> {
+                if (userToken != null) {
+                    CoursesScreen(
+                        token = userToken!!,
+                        onBack = {
+                            currentScreen = "USERSCREEN"
+                        }
+                    )
                 }
             }
         }
