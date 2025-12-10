@@ -17,7 +17,7 @@ import kotlinx.coroutines.launch
 @Composable
 fun LoginScreen(
     onBack: () -> Unit,
-    onLoginSuccess: (String) -> Unit
+    onLoginSuccess: (String, String) -> Unit
 ) {
     var nicknameInput by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
@@ -64,7 +64,8 @@ fun LoginScreen(
 
                             if (response.isSuccessful && response.body() != null) {
                                 val token = response.body()!!.access
-                                onLoginSuccess(token)
+                                val logoutToken = response.body()!!.refresh
+                                onLoginSuccess(token, logoutToken)
                             } else {
                                 Toast.makeText(context, "Błąd logowania (złe hasło?)", Toast.LENGTH_LONG).show()
                             }

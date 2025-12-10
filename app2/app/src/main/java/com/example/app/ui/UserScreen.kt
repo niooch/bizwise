@@ -15,6 +15,7 @@ import com.example.app.data.RetrofitClient
 @Composable
 fun UserScreen(
     token: String,
+    onProfileClick: () -> Unit
 ) {
     var userData by remember { mutableStateOf<InformationAboutMe?>(null) }
 
@@ -74,7 +75,7 @@ fun UserScreen(
 
             // --- PRAWY GÓRNY RÓG (Ikona P) ---
             IconButton(
-                onClick = { /* TODO: Logika przejścia do Profilu (P) */ },
+                onClick = onProfileClick,
                 modifier = Modifier
                     .align(Alignment.TopEnd) // Przyklej do prawego górnego rogu
                     .padding(16.dp)

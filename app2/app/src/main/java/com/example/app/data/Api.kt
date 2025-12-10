@@ -9,7 +9,7 @@ import retrofit2.http.POST
 import retrofit2.http.Header
 
 data class RegisterRequest(
-    val username: String,
+    val nickname: String,
     val password: String
 )
 
@@ -37,6 +37,11 @@ interface ApiService {
 
     @POST("auth/login/") //Option to lig into app
     suspend fun loginUser(@Body request: LoginRequest): retrofit2.Response<TokenResponse>
+
+    @POST("auth/logout") //Option to logout
+    suspend fun logoutUser(
+        @Header("Authorization") logoutToken: String
+    ): retrofit2.Response<Any>
 
     @GET("auth/me") //Option to get informations about log in user
     suspend fun informationAboutMe(
