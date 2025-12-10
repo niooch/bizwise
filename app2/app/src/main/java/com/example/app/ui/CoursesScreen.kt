@@ -21,7 +21,8 @@ import com.example.app.data.singleCourse
 @Composable
 fun CoursesScreen(
     token: String,        // Klucz do API
-    onBack: () -> Unit    // Funkcja powrotu
+    onBack: () -> Unit,    // Funkcja powrotu
+    onCourseClick: (Int) -> Unit //Funkcja do przechodzenia wewnątrz kursu
 ) {
     // 1. Stany widoku
     var coursesList by remember { mutableStateOf<List<singleCourse>>(emptyList()) }
@@ -99,7 +100,10 @@ fun CoursesScreen(
                         verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
                         items(coursesList) { course ->
-                            CourseItem(course = course)
+                            CourseItem(
+                                course = course,
+                                onClick = { onCourseClick(course.id.toInt()) }
+                                )
                         }
                     }
                 }
@@ -110,8 +114,12 @@ fun CoursesScreen(
 
 // Pomocniczy komponent do wyświetlania pojedynczego kafelka kursu
 @Composable
-fun CourseItem(course: singleCourse) {
+fun CourseItem(
+    course: singleCourse,
+    onClick: () -> Unit
+    ) {
     Card(
+        onClick = onClick,
         modifier = Modifier.fillMaxWidth(),
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
@@ -138,12 +146,6 @@ fun CourseItem(course: singleCourse) {
                     text = course.name,
                     fontSize = 18.sp,
                     fontWeight = FontWeight.Bold
-                )
-                // Opcjonalnie: ID kursu (jeśli chcesz wyświetlać debugowo)
-                Text(
-                    text = "ID kursu: ${course.id}",
-                    fontSize = 12.sp,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
         }

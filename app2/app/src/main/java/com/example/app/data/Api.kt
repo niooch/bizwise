@@ -1,12 +1,13 @@
 package com.example.app.data
 
-import android.R
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import retrofit2.http.Body
 import retrofit2.http.GET
 import retrofit2.http.POST
 import retrofit2.http.Header
+import retrofit2.http.Path
+
 
 data class RegisterRequest(
     val nickname: String,
@@ -36,12 +37,18 @@ data class singleCourse(
     val name: String
 )
 
-data class singleLesson(
-    val id: Integer,
+data class SingleLesson(
+    val id: Int,
     val name: String,
-    val order: Integer,
+    val order: Int,
     val locked: Boolean,
     val completed: Boolean
+)
+
+data class CoursesDetailResponse(
+    val id: Int,
+    val name: String,
+    val lessons: List<SingleLesson>
 )
 
 interface ApiService {
@@ -61,15 +68,16 @@ interface ApiService {
         @Header("Authorization") token: String
     ): retrofit2.Response<InformationAboutMe>
 
-    @GET("courses/")
+    @GET("courses/") //Option to get all courses
     suspend fun allCourses(
         @Header("Authorization") token: String
     ): retrofit2.Response<List<singleCourse>>
 
-    @GET("courses/{id}")
+    @GET("courses/{id}") //Option to get all lessons in single course
     suspend fun singleLesson(
-        @Header("Authorization") token: String
-    ): retrofit2.Response<List<singleLesson>>
+        @Header("Authorization") token: String,
+        @Path("id") courseId: Int
+    ): retrofit2.Response<CoursesDetailResponse>
 }
 
 object RetrofitClient {

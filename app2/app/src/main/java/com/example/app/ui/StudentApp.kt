@@ -10,9 +10,9 @@ import kotlin.math.log
 @Composable
 fun StudentApp() {
     var currentScreen by remember { mutableStateOf("WELCOME") }
-    // Access token trzymamy tylko po to, żeby przekazać go do UserScreen/ProfileScreen
     var userToken by remember { mutableStateOf<String?>(null) }
     var logoutToken by remember { mutableStateOf<String?>(null) }
+    var selectedCourseId by remember { mutableStateOf<Int?>(null) }
 
     Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
         when (currentScreen) {
@@ -73,7 +73,20 @@ fun StudentApp() {
                         token = userToken!!,
                         onBack = {
                             currentScreen = "USERSCREEN"
+                        },
+                        onCourseClick = { clickedId ->
+                            selectedCourseId = clickedId
+                            currentScreen = "COURSEDETAILSCREEN"
                         }
+                    )
+                }
+            }
+            "COURSEDETAILSCREEN" -> {
+                if (userToken != null && selectedCourseId != null) {
+                    CourseDetailsScreen(
+                        token = userToken!!,
+                        courseId = selectedCourseId!!,
+                        onBack = { currentScreen = "ALLCOURSES" }
                     )
                 }
             }
