@@ -9,13 +9,12 @@ import retrofit2.http.POST
 import retrofit2.http.Header
 
 data class RegisterRequest(
-    val nickname: String,
+    val username: String,
     val password: String
 )
 
 data class LoginRequest(
-    val nickname: String,
-    val username: String, //TODO: fixError - delete username
+    val username: String,
     val password: String
 )
 

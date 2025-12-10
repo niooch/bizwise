@@ -59,16 +59,14 @@ fun LoginScreen(
                     scope.launch {
                         isLoading = true
                         try {
-                            val request = LoginRequest(nickname = nicknameInput, username = nicknameInput, password = password) //TODO: fixError - delete username
+                            val request = LoginRequest(username = nicknameInput, password = password)
                             val response = RetrofitClient.api.loginUser(request)
 
                             if (response.isSuccessful && response.body() != null) {
                                 val token = response.body()!!.access
-                                Toast.makeText(context, "Zalogowano! Token: ${token.take(10)}...", Toast.LENGTH_LONG).show()
                                 onLoginSuccess(token)
                             } else {
                                 Toast.makeText(context, "Błąd logowania (złe hasło?)", Toast.LENGTH_LONG).show()
-                                //Toast.makeText(context, "DEBUG CZY TO TU", Toast.LENGTH_LONG).show()
                             }
                         } catch (e: Exception) {
                             Toast.makeText(context, "Błąd sieci: ${e.message}", Toast.LENGTH_LONG).show()

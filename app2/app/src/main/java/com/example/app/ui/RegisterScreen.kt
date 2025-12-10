@@ -57,7 +57,7 @@ fun RegisterScreen(onBack: () -> Unit) {
                     scope.launch {
                         isLoading = true
                         try {
-                            val request = RegisterRequest(nickname = nicknameInput, password = password)
+                            val request = RegisterRequest(username = nicknameInput, password = password)
                             val response = RetrofitClient.api.registerUser(request)
 
                             if (response.isSuccessful) {
