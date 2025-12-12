@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BizWise - Platforma Edukacyjna UEW</title>
+    <style>
+        :root {
+            --primary-color: #003366; /* Ciemny granat */
+            --accent-color: #d9534f; /* Akcent */
+            --light-bg: #f8f9fa;
+            --text-color: #333;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            line-height: 1.6;
+            color: var(--text-color);
+        }
+        header {
+            background: var(--primary-color);
+            color: white;
+            padding: 1rem 0;
+        }
+        .container {
+            width: 90%;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 15px;
+        }
+        nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        nav h1 { margin: 0; font-size: 1.5rem; }
+        nav ul { list-style: none; display: flex; gap: 20px; }
+        nav a { color: white; text-decoration: none; font-weight: bold; }
+
+        .hero {
+            background: var(--light-bg);
+            padding: 4rem 0;
+            text-align: center;
+            border-bottom: 5px solid var(--accent-color);
+        }
+        .hero h2 { font-size: 2.5rem; margin-bottom: 1rem; color: var(--primary-color); }
+        .hero p { font-size: 1.2rem; max-width: 800px; margin: 0 auto 2rem auto; }
+
+        .btn {
+            display: inline-block;
+            background: var(--accent-color);
+            color: white;
+            padding: 10px 25px;
+            text-decoration: none;
+            border-radius: 5px;
+            font-weight: bold;
+            transition: background 0.3s;
+        }
+        .btn:hover { background: #c9302c; }
+
+        .features {
+            padding: 3rem 0;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+        }
+        .feature-card {
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .feature-card h3 { color: var(--primary-color); }
+
+        footer {
+            background: #333;
+            color: #ddd;
+            text-align: center;
+            padding: 20px 0;
+            margin-top: 3rem;
+            font-size: 0.9rem;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="container">
+            <nav>
+                <h1>BizWise</h1>
+                <ul>
+                    <li><a href="#">Kursy</a></li>
+                    <li><a href="#">Forum</a></li>
+                    <li><a href="#">Logowanie</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <main>
+        <section class="hero">
+            <div class="container">
+                <h2>Witaj na platformie BizWise</h2>
+                <p>
+                    Oficjalne narzędzie wspierające studentów Uniwersytetu Ekonomicznego we Wrocławiu.
+                    Przygotuj się do egzaminów, rozwiązuj quizy i poszerzaj swoją wiedzę biznesową.
+                </p>
+                <a href="#" class="btn">Rozpocznij Naukę</a>
+            </div>
+        </section>
+
+        <section class="container">
+            <div class="features">
+                {% for course in courses %}
+                <div class="feature-card">
+                    <h3>📚 {{ course.name }}</h3>
+
+                    <p style="color: #555; margin: 10px 0;">
+                        Liczba lekcji: <strong>{{ course.course_lessons.count }}</strong>
+                    </p>
+
+                    <a href="{% url 'course_detail' course.id %}" class="btn" style="font-size: 0.9rem;">Przejdź do kursu</a>
+                </div>
+                {% empty %}
+                <div class="feature-card" style="grid-column: 1 / -1; text-align: center; color: #777;">
+                    <p>Brak dostępnych kursów. Zajrzyj później!</p>
+                </div>
+                {% endfor %}
+            </div>
+        </section>
+
+        <section class="container" style="text-align: center; margin-top: 2rem;">
+            <h3>Dlaczego BizWise?</h3>
+            <p>Aplikacja została stworzona, aby ułatwić proces przyswajania wiedzy ekonomicznej i usprawnić komunikację na linii wykładowca-student.</p>
+        </section>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>&copy; 2024 BizWise dla Uniwersytetu Ekonomicznego we Wrocławiu.</p>
+        </div>
+    </footer>
+
+</body>
+</html>

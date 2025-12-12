@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ lesson.name }}</title>
+    <style>
+        body { font-family: sans-serif; max-width: 900px; margin: 0 auto; padding: 20px; background: #f4f4f4; }
+        .top-nav { margin-bottom: 20px; }
+        .slide-container { background: white; padding: 40px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); margin-bottom: 30px; }
+        .slide-image { max-width: 100%; height: auto; margin-top: 15px; border-radius: 4px; }
+        .quiz-alert { background: #dff0d8; color: #3c763d; padding: 20px; border-radius: 5px; border: 1px solid #d6e9c6; text-align: center; }
+        .btn-quiz { background: #3c763d; color: white; padding: 10px 20px; text-decoration: none; border-radius: 4px; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <div class="top-nav">
+        <a href="javascript:history.back()"> &larr; Wróć do spisu treści</a>
+    </div>
+
+    <h1>{{ lesson.name }}</h1>
+
+    {% for slide in slides %}
+        <div class="slide-container">
+            <h3>Slajd {{ slide.order }}</h3>
+            <div class="slide-content">
+                {{ slide.text_content|linebreaks }}
+
+                {% if slide.image_url %}
+                    <br>
+                    <img src="{{ slide.image_url }}" alt="Slide image" class="slide-image">
+                {% endif %}
+            </div>
+        </div>
+    {% empty %}
+        <p>Ta lekcja jest pusta.</p>
+    {% endfor %}
+
+    {% if quiz_link %}
+        <div class="quiz-alert">
+            <h3>Sprawdź swoją wiedzę!</h3>
+            <p>Do tej lekcji przypisany jest test: <strong>{{ quiz_link.name }}</strong></p>
+            <a href="#" class="btn-quiz">Rozwiąż Quiz (Coming Soon)</a>
+        </div>
+    {% endif %}
+
+</body>
+</html>

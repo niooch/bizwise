@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ course.name }} - BizWise</title>
+    <style>
+        body { font-family: sans-serif; line-height: 1.6; color: #333; max-width: 800px; margin: 0 auto; padding: 20px; }
+        .header { border-bottom: 2px solid #003366; padding-bottom: 20px; margin-bottom: 20px; }
+        .back-link { text-decoration: none; color: #666; font-size: 0.9rem; }
+        .lesson-list { list-style: none; padding: 0; }
+        .lesson-item { background: #f9f9f9; margin-bottom: 10px; padding: 15px; border-radius: 5px; border: 1px solid #ddd; display: flex; justify-content: space-between; align-items: center; }
+        .lesson-item a { text-decoration: none; color: #003366; font-weight: bold; }
+        .lesson-item a:hover { text-decoration: underline; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <a href="{% url 'home' %}" class="back-link">&larr; Wróć do strony głównej</a>
+        <h1>{{ course.name }}</h1>
+    </div>
+
+    <h2>Program kursu</h2>
+
+    {% if course_content %}
+        <ul class="lesson-list">
+            {% for item in course_content %}
+            <li class="lesson-item">
+                <span>Lekcja {{ item.order }}: <strong>{{ item.lesson.name }}</strong></span>
+                <a href="{% url 'lesson_detail' item.lesson.id %}">Rozpocznij &rarr;</a>
+            </li>
+            {% endfor %}
+        </ul>
+    {% else %}
+        <p>Ten kurs nie ma jeszcze dodanych lekcji.</p>
+    {% endif %}
+</body>
+</html>
