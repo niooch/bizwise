@@ -14,6 +14,8 @@ fun StudentApp() {
     var logoutToken by remember { mutableStateOf<String?>(null) }
     var selectedCourseId by remember { mutableStateOf<Int?>(null) }
     var selectedLessonId by remember { mutableStateOf<Int?>(null) }
+    var selectedQuizzId by remember { mutableStateOf<Int?>(null) }
+
 
     Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
         when (currentScreen) {
@@ -102,8 +104,18 @@ fun StudentApp() {
                         lessonId = selectedLessonId!!,
                         onBack = { currentScreen = "COURSEDETAILSCREEN" },
                         onQuizStart = { quizId ->
-                            currentScreen = "COURSE_DETAILS" //TODO logika przejscia do quizu
+                            selectedQuizzId = quizId
+                            currentScreen = "QUIZZ_SCREEN" //TODO logika przejscia do quizu
                         }
+                    )
+                }
+            }
+            "QUIZZ_SCREEN" -> {
+                if (userToken != null && selectedQuizzId != null) {
+                    QuizScreen(
+                        token = userToken!!,
+                        quizId = selectedQuizzId!!,
+                        onBack = { currentScreen = "COURSEDETAILSCREEN"}
                     )
                 }
             }

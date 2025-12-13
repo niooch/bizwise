@@ -114,8 +114,12 @@ fun ProfileScreen(
                         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer)
                     ) {
                         Row(modifier = Modifier.padding(16.dp).fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
-                            Text("🔥 Streak: ", fontSize = 20.sp)
-                            Text(text = "${userData!!.streak} dni", fontSize = 20.sp, fontWeight = FontWeight.Bold)
+                            Text("🔥 Best Streak: ", fontSize = 20.sp) //TODO zmienic z best streak na strerak
+                            if (userData!!.streak.best_streak == 1) {
+                                Text(text = "${userData!!.streak.best_streak} dzień", fontSize = 20.sp, fontWeight = FontWeight.Bold)
+                            } else {
+                                Text(text = "${userData!!.streak.best_streak} dni", fontSize = 20.sp, fontWeight = FontWeight.Bold)
+                            }
                         }
                     }
 

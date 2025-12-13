@@ -39,7 +39,6 @@ fun LessonSlidesScreen(
     var slidesData by remember { mutableStateOf<AllSlides?>(null) }
     var currentSlideIndex by remember { mutableStateOf(0) }
     var isLoading by remember { mutableStateOf(true) }
-
     val sortedSlides = remember(slidesData) {
         slidesData?.slides?.sortedBy { it.order } ?: emptyList()
     }
@@ -48,8 +47,9 @@ fun LessonSlidesScreen(
     LaunchedEffect(lessonId) {
         try {
             val response = RetrofitClient.api.allSlides("Bearer $token", lessonId)
-            if (response.isSuccessful && response.body() != null) {
-                slidesData = response.body()
+            val body = response.body()
+            if (response.isSuccessful && body != null) {
+                slidesData = body
             } else {
                 Log.e("API", "Błąd slajdów: ${response.code()}")
             }
@@ -125,7 +125,7 @@ fun LessonSlidesScreen(
                     Spacer(modifier = Modifier.height(16.dp))
                     Button(
                         onClick = {
-                            onQuizStart(slidesData?.quiz_id ?: 0)
+                            onQuizStart(slidesData?.quiz_id ?: 1) //TODO poprawić logike
                         }
                     ) {
                         Text("Rozpocznij Quiz")
