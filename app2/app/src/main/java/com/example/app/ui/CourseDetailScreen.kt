@@ -24,7 +24,8 @@ import com.example.app.data.SingleLesson
 fun CourseDetailsScreen(
     token: String,
     courseId: Int,
-    onBack: () -> Unit
+    onBack: () -> Unit,
+    onLessonClick: (Int) -> Unit
 ) {
     var lessonsList by remember { mutableStateOf<List<SingleLesson>>(emptyList()) }
     var isLoading by remember { mutableStateOf(true) }
@@ -77,7 +78,10 @@ fun CourseDetailsScreen(
                         verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         items(lessonsList) { lesson ->
-                            LessonItem(lesson = lesson)
+                            LessonItem(
+                                lesson = lesson,
+                                onClick = { onLessonClick(lesson.id) }
+                            )
                         }
                     }
                 }
@@ -87,7 +91,7 @@ fun CourseDetailsScreen(
 }
 
 @Composable
-fun LessonItem(lesson: SingleLesson) {
+fun LessonItem(lesson: SingleLesson, onClick: () -> Unit) {
     // Ustalamy kolor i ikonę w zależności od statusu lekcji
     val (icon, tint) = when {
         lesson.locked -> Icons.Default.Lock to Color.Gray
@@ -97,7 +101,7 @@ fun LessonItem(lesson: SingleLesson) {
 
     Card(
         // Jeśli lekcja jest zablokowana, nie pozwalamy klikać (opcjonalnie)
-        onClick = { /* TODO: Przejście do treści lekcji */ },
+        onClick = onClick,
         enabled = !lesson.locked,
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(

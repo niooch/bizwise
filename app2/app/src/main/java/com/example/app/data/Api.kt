@@ -51,6 +51,20 @@ data class CoursesDetailResponse(
     val lessons: List<SingleLesson>
 )
 
+data class SingleSlide(
+    val id: Int,
+    val order: Int,
+    val text_content: String,
+    val image_url: String?
+)
+
+data class AllSlides(
+    val id: Int,
+    val name: String,
+    val slides: List<SingleSlide>,
+    val quiz_id: Int?
+)
+
 interface ApiService {
     @POST("auth/register/") //Option to register
     suspend fun registerUser(@Body request: RegisterRequest): retrofit2.Response<Any>
@@ -78,6 +92,12 @@ interface ApiService {
         @Header("Authorization") token: String,
         @Path("id") courseId: Int
     ): retrofit2.Response<CoursesDetailResponse>
+
+    @GET("courses/lessons/{id}/")
+    suspend fun allSlides(
+        @Header("Authorization") token: String,
+        @Path("id") slidesId: Int
+    ): retrofit2.Response<AllSlides>
 }
 
 object RetrofitClient {

@@ -13,6 +13,7 @@ fun StudentApp() {
     var userToken by remember { mutableStateOf<String?>(null) }
     var logoutToken by remember { mutableStateOf<String?>(null) }
     var selectedCourseId by remember { mutableStateOf<Int?>(null) }
+    var selectedLessonId by remember { mutableStateOf<Int?>(null) }
 
     Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
         when (currentScreen) {
@@ -86,7 +87,23 @@ fun StudentApp() {
                     CourseDetailsScreen(
                         token = userToken!!,
                         courseId = selectedCourseId!!,
-                        onBack = { currentScreen = "ALLCOURSES" }
+                        onBack = { currentScreen = "ALLCOURSES" },
+                        onLessonClick = { clickedId ->
+                            selectedLessonId = clickedId
+                            currentScreen = "LESSONS_SLIDE"
+                        }
+                    )
+                }
+            }
+            "LESSONS_SLIDE" -> {
+                if (userToken != null && selectedLessonId != null) {
+                    LessonSlidesScreen(
+                        token = userToken!!,
+                        lessonId = selectedLessonId!!,
+                        onBack = { currentScreen = "COURSEDETAILSCREEN" },
+                        onQuizStart = { quizId ->
+                            currentScreen = "COURSE_DETAILS" //TODO logika przejscia do quizu
+                        }
                     )
                 }
             }
