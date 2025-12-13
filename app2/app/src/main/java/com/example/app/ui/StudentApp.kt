@@ -114,6 +114,7 @@ fun StudentApp() {
                 if (userToken != null && selectedQuizzId != null) {
                     QuizScreen(
                         token = userToken!!,
+                        lessonId = selectedLessonId!!,
                         quizId = selectedQuizzId!!,
                         onBack = { currentScreen = "COURSEDETAILSCREEN"}
                     )

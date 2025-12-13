@@ -29,6 +29,7 @@ import kotlinx.coroutines.launch
 fun QuizScreen(
     token: String,
     quizId: Int,
+    lessonId: Int,
     onBack: () -> Unit
 ) {
 
@@ -38,7 +39,6 @@ fun QuizScreen(
     var quizData by remember { mutableStateOf<Quizz?>(null) }
     var isLoading by remember { mutableStateOf(true) }
 
-    // 👇 Zamiast Toasta, mamy zmienną błędu
     var errorMessage by remember { mutableStateOf<String?>(null) }
 
     var currentQuestionIndex by remember { mutableStateOf(0) }
@@ -46,6 +46,7 @@ fun QuizScreen(
 
     var selectedOptionId by remember { mutableStateOf<Int?>(null) }
     var typedAnswer by remember { mutableStateOf("") }
+    val allAnswers = remember { mutableStateListOf<Answer>() }
 
     // 1. Pobieranie quizu
     LaunchedEffect(quizId) {
@@ -72,29 +73,39 @@ fun QuizScreen(
     fun submitAnswerAndNext(question: Question) {
         scope.launch {
             isSubmittingAnswer = true
-            errorMessage = null // Czyścimy ewentualne stare błędy
+            errorMessage = null
 
             try {
-                val answerToSend = if (question.question_type == "CLOSED") {
+                val singleAnswer = if (question.question_type == "CLOSED") {
                     Answer(
                         question_id = question.id,
                         selected_option_id = selectedOptionId ?: 0,
-                        numeric_answear = 0
+                        numeric_answer = 0
                     )
                 } else {
                     Answer(
                         question_id = question.id,
                         selected_option_id = 0,
-                        numeric_answear = typedAnswer.toIntOrNull() ?: 0
+                        numeric_answer = typedAnswer.toIntOrNull() ?: 0
                     )
                 }
-
-                RetrofitClient.api.submitAnswear("Bearer $token", answerToSend)
+                allAnswers.add(singleAnswer)
 
                 if (quizData != null && currentQuestionIndex < quizData!!.questions.size - 1) {
                     currentQuestionIndex++
                     resetSelection()
                 } else {
+                    val requestBody = Answers(answers = allAnswers.toList())
+                    RetrofitClient.api.submitAnswear(
+                        token = "Bearer $token",
+                        quizId = quizId,
+                        answers = requestBody
+                    )
+
+                    RetrofitClient.api.compleLesson(
+                        token = "Bearer $token",
+                        LessonId = lessonId
+                    )
                     onBack()
                 }
 
@@ -147,8 +158,6 @@ fun QuizScreen(
                 }
 
                 quizData != null && quizData!!.questions.isNotEmpty() -> {
-                    // ... TU JEST CAŁA LOGIKA WYŚWIETLANIA PYTAŃ (bez zmian) ...
-                    // (Kopiujesz to samo co było w środku `else if` w poprzedniej wersji)
 
                     val questions = quizData!!.questions
                     val currentQuestion = questions[currentQuestionIndex]
@@ -225,7 +234,11 @@ fun QuizScreen(
                             if (isSubmittingAnswer) {
                                 CircularProgressIndicator(color = Color.White, modifier = Modifier.size(24.dp))
                             } else {
-                                Text(if (currentQuestionIndex == questions.size - 1) "Zakończ Quiz" else "Następne Pytanie")
+                                if (currentQuestionIndex == questions.size -1 ) {
+                                    Text("Zakończ Quiz")
+                                } else {
+                                    Text("Następne pytanie")
+                                }
                             }
                         }
                     }

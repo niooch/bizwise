@@ -125,7 +125,7 @@ fun LessonSlidesScreen(
                     Spacer(modifier = Modifier.height(16.dp))
                     Button(
                         onClick = {
-                            onQuizStart(slidesData?.quiz_id ?: 1) //TODO poprawić logike
+                            onQuizStart(slidesData?.quiz_id ?: 1)
                         }
                     ) {
                         Text("Rozpocznij Quiz")

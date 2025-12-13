@@ -92,7 +92,11 @@ data class Quizz(
 data class Answer(
     val question_id: Int,
     val selected_option_id: Int,
-    val numeric_answear: Int
+    val numeric_answer: Int
+)
+
+data class Answers(
+    val answers: List<Answer>
 )
 
 interface ApiService {
@@ -138,7 +142,14 @@ interface ApiService {
     @POST("quizzes/{id}/submit/")
     suspend fun submitAnswear(
         @Header("Authorization") token: String,
-        @Body answer: Answer
+        @Path("id") quizId: Int,
+        @Body answers: Answers
+    )
+
+    @POST("courses/lessons/{id}/complete/")
+    suspend fun compleLesson(
+        @Header("Authorization") token: String,
+        @Path("id") LessonId: Int,
     )
 }
 
