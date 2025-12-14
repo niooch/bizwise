@@ -1,0 +1,6 @@
+Host bizwise
+    HostName 161.97.130.29
+    User root
+    Port 2137
+    IdentityFile /sciezka/do/kluczaPrywatnego
+

@@ -100,7 +100,12 @@ class UserMeSerializer(serializers.ModelSerializer):
     def get_streak(self, obj):
         streak = getattr(obj, "streak", None)
         if not streak:
-            return None
+            return {
+                "best_streak": 0,
+                #quick fix for frontend
+                "begin_date": "1970-01-01",
+                "last_activity_date": "1970-01-01",
+            }
         return {
             "best_streak": streak.best_streak,
             "begin_date": streak.begin_date,
