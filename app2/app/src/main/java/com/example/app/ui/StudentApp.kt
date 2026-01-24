@@ -50,6 +50,9 @@ fun StudentApp() {
                         onCoursesClick = {
                             currentScreen = "ALLCOURSES"
                         },
+                        onQuizzesClick = {
+                            currentScreen = "QUIZZES"
+                        },
                         onForumClick = {
                             currentScreen = "FORUM"
                         }
@@ -121,6 +124,31 @@ fun StudentApp() {
                         lessonId = selectedLessonId!!,
                         quizId = selectedQuizzId!!,
                         onBack = { currentScreen = "COURSEDETAILSCREEN"}
+                    )
+                }
+            }
+
+            "QUIZZES" -> {
+                if (userToken != null) {
+                    QuizzesScreen(
+                        token = userToken!!,
+                        onBack = { currentScreen = "USERSCREEN" },
+                        onQuizClick = { quizId, lessonId ->
+                            selectedQuizzId = quizId
+                            selectedLessonId = lessonId
+                            currentScreen = "QUIZZ_SCREEN_FROM_LIST"
+                        }
+                    )
+                }
+            }
+
+            "QUIZZ_SCREEN_FROM_LIST" -> {
+                if (userToken != null && selectedQuizzId != null && selectedLessonId != null) {
+                    QuizScreen(
+                        token = userToken!!,
+                        lessonId = selectedLessonId!!,
+                        quizId = selectedQuizzId!!,
+                        onBack = { currentScreen = "QUIZZES" }
                     )
                 }
             }

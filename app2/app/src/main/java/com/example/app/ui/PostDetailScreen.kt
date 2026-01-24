@@ -18,6 +18,21 @@ import androidx.compose.ui.unit.sp
 import com.example.app.data.*
 import kotlinx.coroutines.launch
 
+// Funkcja pomocnicza do zbierania wszystkich ID odpowiedzi (zagnieżdżonych komentarzy)
+fun collectReplyIds(comments: List<CommentTree>): Set<Int> {
+    val replyIds = mutableSetOf<Int>()
+    fun collectFromReplies(replies: List<CommentTree>) {
+        for (reply in replies) {
+            replyIds.add(reply.id)
+            collectFromReplies(reply.replies)
+        }
+    }
+    for (comment in comments) {
+        collectFromReplies(comment.replies)
+    }
+    return replyIds
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PostDetailScreen(
@@ -193,6 +208,10 @@ fun PostDetailScreen(
                 }
             }
             post != null -> {
+                // Filtruj tylko komentarze glowne (nie bedace odpowiedziami)
+                val replyIds = collectReplyIds(post!!.comments)
+                val topLevelComments = post!!.comments.filter { it.id !in replyIds }
+
                 LazyColumn(
                     modifier = Modifier
                         .fillMaxSize()
@@ -212,14 +231,14 @@ fun PostDetailScreen(
                     // Comments section header
                     item {
                         Text(
-                            text = "Komentarze (${post!!.comments.size})",
+                            text = "Komentarze (${topLevelComments.size})",
                             fontSize = 18.sp,
                             fontWeight = FontWeight.Bold
                         )
                     }
 
                     // Comments
-                    if (post!!.comments.isEmpty()) {
+                    if (topLevelComments.isEmpty()) {
                         item {
                             Text(
                                 text = "Brak komentarzy. Badz pierwszy!",
@@ -227,7 +246,7 @@ fun PostDetailScreen(
                             )
                         }
                     } else {
-                        items(post!!.comments) { comment ->
+                        items(topLevelComments) { comment ->
                             CommentItem(
                                 comment = comment,
                                 depth = 0,

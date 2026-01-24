@@ -17,6 +17,7 @@ fun UserScreen(
     token: String,
     onProfileClick: () -> Unit,
     onCoursesClick: () -> Unit,
+    onQuizzesClick: () -> Unit,
     onForumClick: () -> Unit
 ) {
     var userData by remember { mutableStateOf<InformationAboutMe?>(null) }
@@ -49,7 +50,7 @@ fun UserScreen(
                 // Ikona Q
                 NavigationBarItem(
                     selected = false,
-                    onClick = { /* TODO: Logika przejścia do Quizów (Q) */ },
+                    onClick = onQuizzesClick,
                     icon = {
                         Text("Q", fontSize = 20.sp, fontWeight = FontWeight.Bold)
                     },
