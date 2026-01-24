@@ -5,8 +5,11 @@ import retrofit2.converter.gson.GsonConverterFactory
 import retrofit2.http.Body
 import retrofit2.http.GET
 import retrofit2.http.POST
+import retrofit2.http.PATCH
+import retrofit2.http.DELETE
 import retrofit2.http.Header
 import retrofit2.http.Path
+import retrofit2.http.Query
 
 
 data class RegisterRequest(
@@ -99,6 +102,64 @@ data class Answers(
     val answers: List<Answer>
 )
 
+// Forum models
+data class ForumTag(
+    val id: Int,
+    val name: String
+)
+
+data class PostListItem(
+    val id: Int,
+    val title: String,
+    val content: String,
+    val creation_date: String,
+    val author_nickname: String,
+    val tags: List<ForumTag>,
+    val comments_count: Int,
+    val reactions_count: Int
+)
+
+data class CommentTree(
+    val id: Int,
+    val author_nickname: String,
+    val content: String,
+    val creation_date: String,
+    val replies: List<CommentTree>
+)
+
+data class PostDetail(
+    val id: Int,
+    val title: String,
+    val content: String,
+    val creation_date: String,
+    val author_nickname: String,
+    val tags: List<ForumTag>,
+    val comments: List<CommentTree>
+)
+
+data class CreatePostRequest(
+    val title: String,
+    val content: String,
+    val tag_ids: List<Int>
+)
+
+data class CreateCommentRequest(
+    val content: String,
+    val parent_comment_id: Int? = null
+)
+
+data class ReactionRequest(
+    val reaction_type: String
+)
+
+data class ReactionResponse(
+    val status: String
+)
+
+data class ReactionsSummary(
+    val reactions: Map<String, Int>
+)
+
 interface ApiService {
     @POST("auth/register/") //Option to register
     suspend fun registerUser(@Body request: RegisterRequest): retrofit2.Response<Any>
@@ -151,6 +212,64 @@ interface ApiService {
         @Header("Authorization") token: String,
         @Path("id") LessonId: Int,
     )
+
+    // Forum endpoints
+    @GET("forum/tags/")
+    suspend fun getForumTags(
+        @Header("Authorization") token: String
+    ): retrofit2.Response<List<ForumTag>>
+
+    @GET("forum/posts/")
+    suspend fun getForumPosts(
+        @Header("Authorization") token: String,
+        @Query("tag") tagId: Int? = null,
+        @Query("search") search: String? = null
+    ): retrofit2.Response<List<PostListItem>>
+
+    @POST("forum/posts/")
+    suspend fun createPost(
+        @Header("Authorization") token: String,
+        @Body request: CreatePostRequest
+    ): retrofit2.Response<PostListItem>
+
+    @GET("forum/posts/{id}/")
+    suspend fun getPostDetail(
+        @Header("Authorization") token: String,
+        @Path("id") postId: Int
+    ): retrofit2.Response<PostDetail>
+
+    @DELETE("forum/posts/{id}/")
+    suspend fun deletePost(
+        @Header("Authorization") token: String,
+        @Path("id") postId: Int
+    ): retrofit2.Response<Unit>
+
+    @POST("forum/posts/{id}/comments/")
+    suspend fun addComment(
+        @Header("Authorization") token: String,
+        @Path("id") postId: Int,
+        @Body request: CreateCommentRequest
+    ): retrofit2.Response<CommentTree>
+
+    @POST("forum/posts/{id}/react/")
+    suspend fun reactToPost(
+        @Header("Authorization") token: String,
+        @Path("id") postId: Int,
+        @Body request: ReactionRequest
+    ): retrofit2.Response<ReactionResponse>
+
+    @GET("forum/posts/{id}/reactions/")
+    suspend fun getPostReactions(
+        @Header("Authorization") token: String,
+        @Path("id") postId: Int
+    ): retrofit2.Response<ReactionsSummary>
+
+    @POST("forum/comments/{id}/react/")
+    suspend fun reactToComment(
+        @Header("Authorization") token: String,
+        @Path("id") commentId: Int,
+        @Body request: ReactionRequest
+    ): retrofit2.Response<ReactionResponse>
 }
 
 object RetrofitClient {

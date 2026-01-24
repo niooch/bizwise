@@ -15,6 +15,7 @@ fun StudentApp() {
     var selectedCourseId by remember { mutableStateOf<Int?>(null) }
     var selectedLessonId by remember { mutableStateOf<Int?>(null) }
     var selectedQuizzId by remember { mutableStateOf<Int?>(null) }
+    var selectedPostId by remember { mutableStateOf<Int?>(null) }
 
 
     Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
@@ -48,6 +49,9 @@ fun StudentApp() {
                         },
                         onCoursesClick = {
                             currentScreen = "ALLCOURSES"
+                        },
+                        onForumClick = {
+                            currentScreen = "FORUM"
                         }
                     )
                 } else {
@@ -117,6 +121,42 @@ fun StudentApp() {
                         lessonId = selectedLessonId!!,
                         quizId = selectedQuizzId!!,
                         onBack = { currentScreen = "COURSEDETAILSCREEN"}
+                    )
+                }
+            }
+
+            "FORUM" -> {
+                if (userToken != null) {
+                    ForumScreen(
+                        token = userToken!!,
+                        onBack = { currentScreen = "USERSCREEN" },
+                        onPostClick = { postId ->
+                            selectedPostId = postId
+                            currentScreen = "POST_DETAIL"
+                        },
+                        onCreatePostClick = {
+                            currentScreen = "CREATE_POST"
+                        }
+                    )
+                }
+            }
+
+            "POST_DETAIL" -> {
+                if (userToken != null && selectedPostId != null) {
+                    PostDetailScreen(
+                        token = userToken!!,
+                        postId = selectedPostId!!,
+                        onBack = { currentScreen = "FORUM" }
+                    )
+                }
+            }
+
+            "CREATE_POST" -> {
+                if (userToken != null) {
+                    CreatePostScreen(
+                        token = userToken!!,
+                        onBack = { currentScreen = "FORUM" },
+                        onPostCreated = { currentScreen = "FORUM" }
                     )
                 }
             }

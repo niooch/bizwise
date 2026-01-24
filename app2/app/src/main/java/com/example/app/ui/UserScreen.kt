@@ -16,7 +16,8 @@ import com.example.app.data.RetrofitClient
 fun UserScreen(
     token: String,
     onProfileClick: () -> Unit,
-    onCoursesClick: () -> Unit
+    onCoursesClick: () -> Unit,
+    onForumClick: () -> Unit
 ) {
     var userData by remember { mutableStateOf<InformationAboutMe?>(null) }
 
@@ -58,7 +59,7 @@ fun UserScreen(
                 // Ikona F
                 NavigationBarItem(
                     selected = false,
-                    onClick = { /* TODO: Logika przejścia do Forum (F) */ },
+                    onClick = onForumClick,
                     icon = {
                         Text("F", fontSize = 20.sp, fontWeight = FontWeight.Bold)
                     },
