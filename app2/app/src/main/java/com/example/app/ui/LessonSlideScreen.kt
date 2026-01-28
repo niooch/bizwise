@@ -18,7 +18,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.app.data.AllSlides
@@ -27,7 +26,6 @@ import com.example.app.data.SingleSlide
 import coil.compose.AsyncImage
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
-
 
 @Composable
 fun LessonSlidesScreen(
@@ -40,18 +38,15 @@ fun LessonSlidesScreen(
     var currentSlideIndex by remember { mutableStateOf(0) }
     var isLoading by remember { mutableStateOf(true) }
     val sortedSlides = remember(slidesData) {
-        slidesData?.slides?.sortedBy { it.order } ?: emptyList()
+        slidesData?.slides?.sortedBy { it.order } ?: emptyList() //
     }
 
-    // 2. Pobieranie danych
     LaunchedEffect(lessonId) {
         try {
-            val response = RetrofitClient.api.allSlides("Bearer $token", lessonId)
+            val response = RetrofitClient.api.allSlides("Bearer $token", lessonId) //
             val body = response.body()
             if (response.isSuccessful && body != null) {
                 slidesData = body
-            } else {
-                Log.e("API", "Błąd slajdów: ${response.code()}")
             }
         } catch (e: Exception) {
             Log.e("API", "Błąd sieci: ${e.message}")
@@ -60,13 +55,11 @@ fun LessonSlidesScreen(
         }
     }
 
-    // 3. UI Główny
     Scaffold(
-        // Pasek postępu na górze (opcjonalnie)
         topBar = {
             if (sortedSlides.isNotEmpty()) {
                 LinearProgressIndicator(
-                    progress = { (currentSlideIndex + 1) / sortedSlides.size.toFloat() },
+                    progress = { (currentSlideIndex + 1) / sortedSlides.size.toFloat() }, //
                     modifier = Modifier.fillMaxWidth().height(4.dp),
                 )
             }
@@ -76,15 +69,40 @@ fun LessonSlidesScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
-                .clickable(
-                    interactionSource = remember { MutableInteractionSource() },
-                    indication = null // Brak efektu "fali" przy klikaniu (czystszy wygląd)
-                ) {
-                    if (sortedSlides.isNotEmpty()) { //Gdy wyjdziemy poza zakres przechodzimy do quizw
-                            currentSlideIndex++
-                    }
-                }
         ) {
+            // --- WARSTWA INTERAKCJI (NAWIGACJA LEWO/PRAWO) ---
+            if (!isLoading && currentSlideIndex < sortedSlides.size) {
+                Row(modifier = Modifier.fillMaxSize()) {
+                    // Lewa strona - Cofanie
+                    Box(
+                        modifier = Modifier
+                            .fillMaxHeight()
+                            .weight(1f)
+                            .clickable(
+                                interactionSource = remember { MutableInteractionSource() },
+                                indication = null
+                            ) {
+                                if (currentSlideIndex > 0) {
+                                    currentSlideIndex--
+                                }
+                            }
+                    )
+                    // Prawa strona - Następny
+                    Box(
+                        modifier = Modifier
+                            .fillMaxHeight()
+                            .weight(1f)
+                            .clickable(
+                                interactionSource = remember { MutableInteractionSource() },
+                                indication = null
+                            ) {
+                                currentSlideIndex++
+                            }
+                    )
+                }
+            }
+
+            // Przycisk zamknij (musi być pod spodem lub nad nawigacją, zależy od UX)
             IconButton(
                 onClick = onBack,
                 modifier = Modifier.align(Alignment.TopEnd).padding(16.dp)
@@ -92,7 +110,7 @@ fun LessonSlidesScreen(
                 Icon(Icons.Default.Close, contentDescription = "Zamknij")
             }
 
-            // Zawartość
+            // Zawartość slajdów
             if (isLoading) {
                 CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
             } else if (sortedSlides.isEmpty() && slidesData != null) {
@@ -102,9 +120,11 @@ fun LessonSlidesScreen(
 
                 AnimatedContent(
                     targetState = currentSlide,
-                    transitionSpec = { fadeIn(animationSpec = tween(300)) togetherWith fadeOut(tween(300)) },
+                    transitionSpec = {
+                        fadeIn(animationSpec = tween(300)) togetherWith fadeOut(tween(300))
+                    }, //
                     label = "SlideAnimation",
-                    modifier = Modifier.align(Alignment.Center) // Centrujemy wszystko
+                    modifier = Modifier.align(Alignment.Center).padding(horizontal = 48.dp)
                 ) { slide ->
                     SlideContent(slide = slide)
                 }
@@ -117,6 +137,7 @@ fun LessonSlidesScreen(
                 )
 
             } else {
+                // Ekran końcowy
                 Column(
                     modifier = Modifier.align(Alignment.Center),
                     horizontalAlignment = Alignment.CenterHorizontally
@@ -124,9 +145,7 @@ fun LessonSlidesScreen(
                     Text("Lekcja zakończona!", fontSize = 24.sp, fontWeight = FontWeight.Bold)
                     Spacer(modifier = Modifier.height(16.dp))
                     Button(
-                        onClick = {
-                            onQuizStart(slidesData?.quiz_id ?: 1)
-                        }
+                        onClick = { onQuizStart(slidesData?.quiz_id ?: 1) } //
                     ) {
                         Text("Rozpocznij Quiz")
                     }
@@ -138,23 +157,17 @@ fun LessonSlidesScreen(
 
 @Composable
 fun SlideContent(slide: SingleSlide) {
-    // Sprawdzamy czy jest obrazek (czy string nie jest pusty/null)
-    val hasImage = !slide.image_url.isNullOrBlank()
+    val hasImage = !slide.image_url.isNullOrBlank() //
 
     Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(24.dp),
+        modifier = Modifier.fillMaxWidth(),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-
         ChatBubble(text = slide.text_content)
 
-        // 2. OBRAZEK (Jeśli istnieje)
         if (hasImage) {
             Spacer(modifier = Modifier.height(24.dp))
-
             AsyncImage(
                 model = slide.image_url,
                 contentDescription = null,
@@ -171,7 +184,7 @@ fun SlideContent(slide: SingleSlide) {
 @Composable
 fun ChatBubble(text: String) {
     Surface(
-        color = MaterialTheme.colorScheme.primaryContainer, // Kolor dymka
+        color = MaterialTheme.colorScheme.primaryContainer,
         shape = RoundedCornerShape(
             topStart = 24.dp,
             topEnd = 24.dp,
