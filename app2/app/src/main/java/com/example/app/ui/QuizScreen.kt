@@ -50,29 +50,6 @@ fun QuizScreen(
     var typedAnswer by remember { mutableStateOf("") }
     val allAnswers = remember { mutableStateListOf<Answer>() }
 
-    // 1. Pobieranie quizu
-    LaunchedEffect(quizId) {
-        isQuizFinished = false
-        loadError = null
-        submitError = null
-        allAnswers.clear()
-        currentQuestionIndex = 0
-        resetSelection()
-        try {
-            val response = RetrofitClient.api.quizzToLesson("Bearer $token", quizId)
-            if (response.isSuccessful && response.body() != null) {
-                quizData = response.body()
-            } else {
-                loadError = "Nie udało się pobrać quizu (Kod: ${response.code()})"
-            }
-        } catch (e: Exception) {
-            Log.e("QUIZ", "Error: ${e.message}")
-            loadError = "Błąd połączenia: ${e.message}"
-        } finally {
-            isLoading = false
-        }
-    }
-
     fun resetSelection() {
         selectedOptionId = null
         typedAnswer = ""
@@ -122,11 +99,34 @@ fun QuizScreen(
                 Log.e("QUIZ", "Submit error: ${e.message}")
                 submitError = "Nie udało się wysłać odpowiedzi. Spróbuj ponownie."
                 if (quizData != null && currentQuestionIndex == quizData!!.questions.size - 1 && allAnswers.isNotEmpty()) {
-                    allAnswers.removeLast()
+                    allAnswers.removeAt(allAnswers.lastIndex)
                 }
             } finally {
                 isSubmittingAnswer = false
             }
+        }
+    }
+
+    // 1. Pobieranie quizu
+    LaunchedEffect(quizId) {
+        isQuizFinished = false
+        loadError = null
+        submitError = null
+        allAnswers.clear()
+        currentQuestionIndex = 0
+        resetSelection()
+        try {
+            val response = RetrofitClient.api.quizzToLesson("Bearer $token", quizId)
+            if (response.isSuccessful && response.body() != null) {
+                quizData = response.body()
+            } else {
+                loadError = "Nie udało się pobrać quizu (Kod: ${response.code()})"
+            }
+        } catch (e: Exception) {
+            Log.e("QUIZ", "Error: ${e.message}")
+            loadError = "Błąd połączenia: ${e.message}"
+        } finally {
+            isLoading = false
         }
     }
 
