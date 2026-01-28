@@ -335,11 +335,10 @@ fun ReactionButtons(
     onReact: (String) -> Unit
 ) {
     val reactionTypes = listOf(
-        "LIKE" to "Like",
-        "UPVOTE" to "Upvote",
-        "LAUGH" to "Haha",
-        "SAD" to "Smutne",
-        "ANGRY" to "Zlosc"
+        "LIKE" to "\uD83D\uDC4D",
+        "LAUGH" to "\uD83D\uDE02",
+        "SAD" to "\uD83D\uDE22",
+        "ANGRY" to "\uD83D\uDE21"
     )
 
     LazyRow(
