@@ -53,6 +53,7 @@ fun CourseDetailsScreen(
     }
 
     Scaffold(
+        containerColor = Color.Transparent,
         topBar = {
             TopAppBar(
                 title = { Text("Lekcje kursu") },

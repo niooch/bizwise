@@ -56,6 +56,7 @@ fun LessonSlidesScreen(
     }
 
     Scaffold(
+        containerColor = Color.Transparent,
         topBar = {
             if (sortedSlides.isNotEmpty()) {
                 LinearProgressIndicator(

@@ -131,6 +131,7 @@ fun QuizScreen(
     }
 
     Scaffold(
+        containerColor = Color.Transparent,
         topBar = {
             TopAppBar(
                 title = { Text(quizData?.name ?: "Quiz") },
