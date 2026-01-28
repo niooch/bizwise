@@ -1,7 +1,9 @@
 from datetime import timedelta
+from typing import Optional
 from django.utils import timezone
 
 from .models import UserStreak
+from .badges import award_for_streak
 
 
 def update_user_streak(user):
@@ -21,6 +23,8 @@ def update_user_streak(user):
         },
     )
 
+    current_streak = 1 if created else 0
+
     if not created:
         if streak.last_activity_date == today - timedelta(days=1):
             # continue streak
@@ -34,6 +38,30 @@ def update_user_streak(user):
             streak.last_activity_date = today
             if streak.best_streak < 1:
                 streak.best_streak = 1
+            current_streak = 1
+        else:
+            # activity already logged today; compute current length
+            current_streak = (today - streak.begin_date).days + 1
+    else:
+        current_streak = 1
 
     streak.save()
+    # Award streak-related badges
+    award_for_streak(user, current_streak)
+    return streak
 
+
+def calculate_current_streak(streak: Optional[UserStreak]) -> int:
+    """
+    Return the length of the current streak (0 if broken or missing).
+    A streak continues only if the last activity was today or yesterday.
+    """
+    if not streak:
+        return 0
+
+    today = timezone.localdate()
+    if streak.last_activity_date < today - timedelta(days=1):
+        return 0
+
+    length = (streak.last_activity_date - streak.begin_date).days + 1
+    return max(length, 0)

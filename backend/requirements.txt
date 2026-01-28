@@ -17,3 +17,4 @@ referencing==0.37.0
 rpds-py==0.30.0
 sqlparse==0.5.4
 uritemplate==4.2.0
+Pillow==10.4.0

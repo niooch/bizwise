@@ -9,6 +9,7 @@ from drf_spectacular.utils import (
     OpenApiParameter,
     inline_serializer,
 )
+from users.badges import award_for_course_completion, award_sprinter
 
 from .models import (
     Course,
@@ -179,6 +180,12 @@ class LessonCompleteView(APIView):
     def post(self, request, pk: int):
         user = request.user
         lesson = get_object_or_404(Lesson, pk=pk)
+        completed_fast = str(request.data.get("completed_fast", "")).lower() in (
+            "true",
+            "1",
+            "yes",
+            "on",
+        )
 
         # 1. mark lesson as completed
         LessonProgress.objects.get_or_create(
@@ -202,10 +209,15 @@ class LessonCompleteView(APIView):
 
             if set(course_lessons).issubset(set(completed_for_course)):
                 # all lessons in this course completed
-                UserProgress.objects.get_or_create(
+                progress, created = UserProgress.objects.get_or_create(
                     user=user,
                     course=course,
                     defaults={"completion_date": now},
                 )
+                if created:
+                    award_for_course_completion(user)
+
+        if completed_fast:
+            award_sprinter(user)
 
         return Response({"status": "ok"}, status=status.HTTP_200_OK)

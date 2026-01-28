@@ -6,15 +6,19 @@ Base URL: `/api/` (JWT auth required unless noted). JWTs are issued via SimpleJW
 - `POST /auth/register/` — create account. Body: `{ "nickname": "...", "password": "..." }`. Returns created user `{id, nickname}` plus `access`/`refresh` tokens.
 - `POST /auth/login/` — obtain JWT tokens. Body: `{ "username": "...", "password": "..." }` (use the nickname chosen at registration as `username`). Returns `{ "access": "...", "refresh": "..." }`.
 - `POST /auth/logout/` — blacklist a refresh token. Body: `{ "refresh": "..." }`.
-- `GET /auth/me/` — current user profile. Returns `{ id, username, avatar, exp, streak }` where `avatar` is either `null` or `{ id, name, image_url }`; `streak` is `null` or `{ best_streak, begin_date, last_activity_date }`.
+- `GET /auth/avatars/` — list available avatars (PNG). Returns `[{ id, name, image_url }]`.
+- `GET /auth/me/` — current user profile. Returns `{ id, username, avatar, exp, streak }` where `avatar` is either `null` or `{ id, name, image_url }`; `streak` is `{ current_streak, best_streak, begin_date, last_activity_date }` (placeholder dates when streak not started yet).
+- `GET /auth/me/streak/best/` — best streak summary for the current user. Returns `{ best_streak, begin_date, last_activity_date }` (placeholder dates when missing).
+- `GET /auth/me/streak/current/` — current streak length with dates. Returns `{ current_streak, begin_date, last_activity_date }` (placeholder dates when missing).
+- `GET /auth/me/badges/` — list badges earned by the current user. Returns `[{ id, name, description, image_url, awarded_at }]`.
 - `GET /auth/me/progress/` — completion summary. Returns `{ completed_courses: [course_id], completed_lessons: [] }` (lessons placeholder for future expansion).
-- `PATCH /auth/me/avatar/` — set avatar. Body: `{ "avatar_id": <id> }`. Returns `{ "status": "ok" }`.
+- `PATCH /auth/me/avatar/` — choose avatar. Body: `{ "avatar_id": <id> }`. Returns `{ "status": "ok" }`.
 
 ## Courses & lessons (`/api/courses/…`)
 - `GET /courses/` — list courses. Query: `?search=<text>` (by name), `?ordering=name|-name`. Returns `[{ id, name }]`.
 - `GET /courses/<course_id>/` — course detail with lesson list (no slide content). Returns `{ id, name, lessons: [{ id, name, order, locked, completed }] }`. `locked` toggles based on previous lesson completion.
 - `GET /courses/lessons/<lesson_id>/` — lesson detail. Returns `{ id, name, slides: [{ id, order, text_content, image_url }], quiz_id }` (`quiz_id` may be `null`).
-- `POST /courses/lessons/<lesson_id>/complete/` — mark lesson completed for current user and, when all lessons in a course are finished, record course completion. Returns `{ "status": "ok" }`.
+- `POST /courses/lessons/<lesson_id>/complete/` — mark lesson completed for current user and, when all lessons in a course are finished, record course completion (awards badge “Pierwszy Kurs” on first completed course). Optional body flag `{"completed_fast": true}` can be sent to award “Sprinter”. Returns `{ "status": "ok" }`.
 
 ## Quizzes (`/api/quizzes/…`)
 - `GET /quizzes/<quiz_id>/` — quiz detail without answers. Returns `{ id, name, questions: [{ id, question_type, content, answer_options }] }`; `answer_options` contain `{ id, content }` for closed questions, empty list for open/numeric.

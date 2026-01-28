@@ -7,7 +7,22 @@ from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
 from courses.models import UserProgress, Course
 from quizzes.models import QuizResult
-from .models import Avatar, UserProfile, UserStreak
+from .models import Avatar, UserProfile, UserStreak, Badge, UserBadge
+from .utils import calculate_current_streak
+
+
+def _build_image_url(obj, request):
+    """
+    Resolve an absolute URL for uploaded images or fallback to stored URL fields.
+    """
+    if getattr(obj, "image", None):
+        url = obj.image.url
+        if request:
+            return request.build_absolute_uri(url)
+        return url
+    if hasattr(obj, "image_url"):
+        return obj.image_url or None
+    return None
 
 User = get_user_model()
 
@@ -58,9 +73,42 @@ class AvatarUpdateSerializer(serializers.Serializer):
 
 
 class AvatarSerializer(serializers.ModelSerializer):
+    image_url = serializers.SerializerMethodField()
+
     class Meta:
         model = Avatar
         fields = ["id", "name", "image_url"]
+
+    def get_image_url(self, obj):
+        request = self.context.get("request") if hasattr(self, "context") else None
+        return _build_image_url(obj, request)
+
+
+class BadgeSerializer(serializers.ModelSerializer):
+    image_url = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Badge
+        fields = ["id", "name", "description", "image_url"]
+
+    def get_image_url(self, obj):
+        request = self.context.get("request") if hasattr(self, "context") else None
+        return _build_image_url(obj, request)
+
+
+class UserBadgeSerializer(serializers.ModelSerializer):
+    id = serializers.IntegerField(source="badge.id", read_only=True)
+    name = serializers.CharField(source="badge.name", read_only=True)
+    description = serializers.CharField(source="badge.description", read_only=True)
+    image_url = serializers.SerializerMethodField()
+
+    class Meta:
+        model = UserBadge
+        fields = ["id", "name", "description", "image_url", "awarded_at"]
+
+    def get_image_url(self, obj):
+        request = self.context.get("request") if hasattr(self, "context") else None
+        return _build_image_url(obj.badge, request)
 
 
 class UserMeSerializer(serializers.ModelSerializer):
@@ -78,10 +126,11 @@ class UserMeSerializer(serializers.ModelSerializer):
     def get_avatar(self, obj):
         profile = getattr(obj, "profile", None)
         if profile and profile.avatar:
+            request = self.context.get("request") if hasattr(self, "context") else None
             return {
                 "id": profile.avatar.id,
                 "name": profile.avatar.name,
-                "image_url": profile.avatar.image_url,
+                "image_url": _build_image_url(profile.avatar, request),
             }
         return None
 
@@ -101,12 +150,14 @@ class UserMeSerializer(serializers.ModelSerializer):
         streak = getattr(obj, "streak", None)
         if not streak:
             return {
+                "current_streak": 0,
                 "best_streak": 0,
                 #quick fix for frontend
                 "begin_date": "1970-01-01",
                 "last_activity_date": "1970-01-01",
             }
         return {
+            "current_streak": calculate_current_streak(streak),
             "best_streak": streak.best_streak,
             "begin_date": streak.begin_date,
             "last_activity_date": streak.last_activity_date,

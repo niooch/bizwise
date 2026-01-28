@@ -11,6 +11,7 @@ from drf_spectacular.utils import (
     inline_serializer,
 )
 from drf_spectacular.types import OpenApiTypes
+from users.badges import award_for_comment
 
 from .models import (
     Post,
@@ -163,6 +164,8 @@ class CommentCreateView(APIView):
             author=request.user,
             content=content,
         )
+
+        award_for_comment(request.user)
 
         serializer = CommentTreeSerializer(comment)
         return Response(serializer.data, status=status.HTTP_201_CREATED)

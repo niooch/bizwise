@@ -7,6 +7,9 @@ from .views import (
     RefreshView,
     MeView,
     MeProgressView,
+    MeBestStreakView,
+    MeCurrentStreakView,
+    MeBadgesView,
     MeAvatarView,
     AvatarListView,
 )
@@ -22,5 +25,8 @@ urlpatterns = [
     # User + gamification
     path("me/", MeView.as_view(), name="users-me"),
     path("me/progress/", MeProgressView.as_view(), name="users-me-progress"),
+    path("me/streak/best/", MeBestStreakView.as_view(), name="users-me-streak-best"),
+    path("me/streak/current/", MeCurrentStreakView.as_view(), name="users-me-streak-current"),
+    path("me/badges/", MeBadgesView.as_view(), name="users-me-badges"),
     path("me/avatar/", MeAvatarView.as_view(), name="users-me-avatar"),
 ]

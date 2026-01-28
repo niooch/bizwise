@@ -1,4 +1,3 @@
-from django.utils import timezone
 from rest_framework import generics, permissions, status, serializers
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -18,7 +17,7 @@ from drf_spectacular.utils import (
 from django.contrib.auth import get_user_model
 
 from courses.models import UserProgress
-from .models import UserProfile, Avatar, UserStreak
+from .models import UserProfile, Avatar, UserStreak, UserBadge
 from .serializers import (
     RegisterSerializer,
     MyTokenObtainPairSerializer,
@@ -26,7 +25,9 @@ from .serializers import (
     AvatarSerializer,
     UserMeSerializer,
     UserProgressSerializer,
+    UserBadgeSerializer,
 )
+from .utils import calculate_current_streak
 
 User = get_user_model()
 
@@ -164,7 +165,7 @@ class RefreshView(TokenRefreshView):
 class MeView(generics.RetrieveAPIView):
     """
     GET /api/users/me
-    Returns: avatar, nickname, exp, streak. :contentReference[oaicite:6]{index=6}
+    Returns: avatar, nickname, exp, streak (current + best). :contentReference[oaicite:6]{index=6}
     """
     serializer_class = UserMeSerializer
 
@@ -197,6 +198,97 @@ class MeProgressView(APIView):
         serializer = UserProgressSerializer(data=data)
         serializer.is_valid(raise_exception=True)
         return Response(serializer.data)
+
+
+@extend_schema(
+    tags=["users"],
+    responses=inline_serializer(
+        name="BestStreakResponse",
+        fields={
+            "best_streak": serializers.IntegerField(),
+            "begin_date": serializers.DateField(),
+            "last_activity_date": serializers.DateField(),
+        },
+    ),
+)
+class MeBestStreakView(APIView):
+    """
+    GET /api/users/me/streak/best
+    Returns: user's best streak with streak dates.
+    """
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        streak = getattr(request.user, "streak", None)
+        if not streak:
+            return Response(
+                {
+                    "best_streak": 0,
+                    "begin_date": "1970-01-01",
+                    "last_activity_date": "1970-01-01",
+                }
+            )
+
+        payload = {
+            "best_streak": streak.best_streak,
+            "begin_date": streak.begin_date,
+            "last_activity_date": streak.last_activity_date,
+        }
+        return Response(payload)
+
+
+@extend_schema(
+    tags=["users"],
+    responses=inline_serializer(
+        name="CurrentStreakResponse",
+        fields={
+            "current_streak": serializers.IntegerField(),
+            "begin_date": serializers.DateField(),
+            "last_activity_date": serializers.DateField(),
+        },
+    ),
+)
+class MeCurrentStreakView(APIView):
+    """
+    GET /api/users/me/streak/current
+    Returns: user's current streak with streak dates.
+    """
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        streak = getattr(request.user, "streak", None)
+        current = calculate_current_streak(streak)
+
+        payload = {
+            "current_streak": current,
+            "begin_date": "1970-01-01",
+            "last_activity_date": "1970-01-01",
+        }
+
+        if streak:
+            payload["begin_date"] = streak.begin_date
+            payload["last_activity_date"] = streak.last_activity_date
+
+        return Response(payload)
+
+
+@extend_schema(
+    tags=["users"],
+    responses=UserBadgeSerializer(many=True),
+)
+class MeBadgesView(generics.ListAPIView):
+    """
+    GET /api/users/me/badges
+    Returns: list of badges earned by the current user.
+    """
+    serializer_class = UserBadgeSerializer
+
+    def get_queryset(self):
+        return (
+            UserBadge.objects.filter(user=self.request.user)
+            .select_related("badge")
+            .order_by("-awarded_at")
+        )
 
 
 @extend_schema(
