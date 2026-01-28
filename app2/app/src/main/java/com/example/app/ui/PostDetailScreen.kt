@@ -218,7 +218,9 @@ fun PostDetailScreen(
         },
         bottomBar = {
             Surface(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .imePadding(),
                 shadowElevation = 8.dp
             ) {
                 Column(
