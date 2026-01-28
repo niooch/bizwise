@@ -1,11 +1,13 @@
 package com.example.app.ui
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.*
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.Modifier
-import kotlin.math.log
 
 @Composable
 fun StudentApp() {
@@ -17,9 +19,24 @@ fun StudentApp() {
     var selectedQuizzId by remember { mutableStateOf<Int?>(null) }
     var selectedPostId by remember { mutableStateOf<Int?>(null) }
 
+    val backgroundBrush = Brush.verticalGradient(
+        colors = listOf(
+            Color(0xFFFFFFFF),
+            Color(0xFFF6E9FF),
+            Color(0xFFFFE6F5)
+        )
+    )
 
-    Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
-        when (currentScreen) {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(backgroundBrush)
+    ) {
+        Surface(
+            modifier = Modifier.fillMaxSize(),
+            color = Color.Transparent
+        ) {
+            when (currentScreen) {
 
             "WELCOME" -> WelcomeScreen(
                 onLoginClick = { currentScreen = "LOGIN" },
