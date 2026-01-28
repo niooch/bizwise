@@ -39,10 +39,12 @@ fun QuizScreen(
     var quizData by remember { mutableStateOf<Quizz?>(null) }
     var isLoading by remember { mutableStateOf(true) }
 
-    var errorMessage by remember { mutableStateOf<String?>(null) }
+    var loadError by remember { mutableStateOf<String?>(null) }
+    var submitError by remember { mutableStateOf<String?>(null) }
 
     var currentQuestionIndex by remember { mutableStateOf(0) }
     var isSubmittingAnswer by remember { mutableStateOf(false) }
+    var isQuizFinished by remember { mutableStateOf(false) }
 
     var selectedOptionId by remember { mutableStateOf<Int?>(null) }
     var typedAnswer by remember { mutableStateOf("") }
@@ -50,16 +52,22 @@ fun QuizScreen(
 
     // 1. Pobieranie quizu
     LaunchedEffect(quizId) {
+        isQuizFinished = false
+        loadError = null
+        submitError = null
+        allAnswers.clear()
+        currentQuestionIndex = 0
+        resetSelection()
         try {
             val response = RetrofitClient.api.quizzToLesson("Bearer $token", quizId)
             if (response.isSuccessful && response.body() != null) {
                 quizData = response.body()
             } else {
-                errorMessage = "Nie udało się pobrać quizu (Kod: ${response.code()})"
+                loadError = "Nie udało się pobrać quizu (Kod: ${response.code()})"
             }
         } catch (e: Exception) {
             Log.e("QUIZ", "Error: ${e.message}")
-            errorMessage = "Błąd połączenia: ${e.message}"
+            loadError = "Błąd połączenia: ${e.message}"
         } finally {
             isLoading = false
         }
@@ -73,9 +81,10 @@ fun QuizScreen(
     fun submitAnswerAndNext(question: Question) {
         scope.launch {
             isSubmittingAnswer = true
-            errorMessage = null
+            submitError = null
 
             try {
+                val isLastQuestion = quizData != null && currentQuestionIndex == quizData!!.questions.size - 1
                 val singleAnswer = if (question.question_type == "CLOSED") {
                     Answer(
                         question_id = question.id,
@@ -91,7 +100,7 @@ fun QuizScreen(
                 }
                 allAnswers.add(singleAnswer)
 
-                if (quizData != null && currentQuestionIndex < quizData!!.questions.size - 1) {
+                if (!isLastQuestion) {
                     currentQuestionIndex++
                     resetSelection()
                 } else {
@@ -106,12 +115,15 @@ fun QuizScreen(
                         token = "Bearer $token",
                         LessonId = lessonId
                     )
-                    onBack()
+                    isQuizFinished = true
                 }
 
             } catch (e: Exception) {
                 Log.e("QUIZ", "Submit error: ${e.message}")
-                errorMessage = "Nie udało się wysłać odpowiedzi. Spróbuj ponownie."
+                submitError = "Nie udało się wysłać odpowiedzi. Spróbuj ponownie."
+                if (quizData != null && currentQuestionIndex == quizData!!.questions.size - 1 && allAnswers.isNotEmpty()) {
+                    allAnswers.removeLast()
+                }
             } finally {
                 isSubmittingAnswer = false
             }
@@ -140,19 +152,48 @@ fun QuizScreen(
                     CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
                 }
 
-                errorMessage != null -> {
+                loadError != null -> {
                     Column(
                         modifier = Modifier.align(Alignment.Center).padding(16.dp),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         Text(
-                            text = errorMessage ?: "",
+                            text = loadError ?: "",
                             color = MaterialTheme.colorScheme.error,
                             textAlign = TextAlign.Center
                         )
                         Spacer(modifier = Modifier.height(16.dp))
                         Button(onClick = onBack) {
                             Text("Wróć")
+                        }
+                    }
+                }
+
+                isQuizFinished -> {
+                    Column(
+                        modifier = Modifier
+                            .align(Alignment.Center)
+                            .padding(24.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text(
+                            text = "Quiz zakończony!",
+                            fontSize = 24.sp,
+                            fontWeight = FontWeight.Bold,
+                            textAlign = TextAlign.Center
+                        )
+                        Spacer(modifier = Modifier.height(12.dp))
+                        Text(
+                            text = "Twoje odpowiedzi zostały zapisane. Możesz wrócić do lekcji lub listy quizów.",
+                            textAlign = TextAlign.Center,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Spacer(modifier = Modifier.height(24.dp))
+                        Button(
+                            onClick = onBack,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text("Wróć do lekcji")
                         }
                     }
                 }
@@ -221,8 +262,8 @@ fun QuizScreen(
                         Spacer(modifier = Modifier.height(24.dp))
 
                         // Tutaj też możemy wyświetlić błąd wysyłania (mały czerwony tekst nad przyciskiem)
-                        if (errorMessage != null) {
-                            Text(errorMessage!!, color = Color.Red, fontSize = 14.sp)
+                        if (submitError != null) {
+                            Text(submitError!!, color = Color.Red, fontSize = 14.sp)
                             Spacer(modifier = Modifier.height(8.dp))
                         }
 

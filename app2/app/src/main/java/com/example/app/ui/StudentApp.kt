@@ -71,7 +71,19 @@ fun StudentApp() {
                         },
                         onLogout = {
                             currentScreen = "WELCOME"
-                        }
+                        },
+                        onBadgesClick = { currentScreen = "BADGES" }
+                    )
+                } else {
+                    currentScreen = "WELCOME"
+                }
+            }
+
+            "BADGES" -> {
+                if (userToken != null) {
+                    BadgesScreen(
+                        token = userToken!!,
+                        onBack = { currentScreen = "PROFILE" }
                     )
                 } else {
                     currentScreen = "WELCOME"

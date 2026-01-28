@@ -8,6 +8,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.Send
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -47,6 +48,10 @@ fun PostDetailScreen(
     var commentText by remember { mutableStateOf("") }
     var replyingToCommentId by remember { mutableStateOf<Int?>(null) }
     var isSendingComment by remember { mutableStateOf(false) }
+    var currentUserNickname by remember { mutableStateOf<String?>(null) }
+    var showDeleteDialog by remember { mutableStateOf(false) }
+    var isDeleting by remember { mutableStateOf(false) }
+    var deleteError by remember { mutableStateOf<String?>(null) }
 
     val scope = rememberCoroutineScope()
 
@@ -72,6 +77,26 @@ fun PostDetailScreen(
                 errorMessage = "Blad polaczenia: ${e.message}"
             }
             isLoading = false
+        }
+    }
+
+    fun deletePost() {
+        scope.launch {
+            isDeleting = true
+            deleteError = null
+            try {
+                val response = RetrofitClient.api.deletePost("Bearer $token", postId)
+                if (response.isSuccessful) {
+                    showDeleteDialog = false
+                    onBack()
+                } else {
+                    deleteError = "Nie udało się usunąć posta (kod ${response.code()})"
+                }
+            } catch (e: Exception) {
+                deleteError = "Błąd usuwania: ${e.message}"
+            } finally {
+                isDeleting = false
+            }
         }
     }
 
@@ -117,6 +142,55 @@ fun PostDetailScreen(
     LaunchedEffect(postId) {
         loadPost()
     }
+    LaunchedEffect(token) {
+        try {
+            val meResponse = RetrofitClient.api.informationAboutMe("Bearer $token")
+            if (meResponse.isSuccessful && meResponse.body() != null) {
+                currentUserNickname = meResponse.body()!!.username
+            }
+        } catch (e: Exception) {
+            Log.e("PostDetailScreen", "Error loading user: ${e.message}")
+        }
+    }
+
+    if (showDeleteDialog) {
+        AlertDialog(
+            onDismissRequest = { if (!isDeleting) showDeleteDialog = false },
+            title = { Text("Usunąć post?") },
+            text = {
+                Column {
+                    Text("Tej operacji nie można cofnąć.")
+                    if (deleteError != null) {
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            text = deleteError!!,
+                            color = MaterialTheme.colorScheme.error
+                        )
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = { deletePost() },
+                    enabled = !isDeleting
+                ) {
+                    if (isDeleting) {
+                        CircularProgressIndicator(modifier = Modifier.size(18.dp))
+                    } else {
+                        Text("Usuń")
+                    }
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = { showDeleteDialog = false },
+                    enabled = !isDeleting
+                ) {
+                    Text("Anuluj")
+                }
+            }
+        )
+    }
 
     Scaffold(
         topBar = {
@@ -125,6 +199,17 @@ fun PostDetailScreen(
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Wstecz")
+                    }
+                },
+                actions = {
+                    val isAuthor = post?.author_nickname == currentUserNickname
+                    if (isAuthor) {
+                        IconButton(
+                            onClick = { showDeleteDialog = true },
+                            enabled = !isDeleting
+                        ) {
+                            Icon(Icons.Filled.Delete, contentDescription = "Usuń post")
+                        }
                     }
                 }
             )

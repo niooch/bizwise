@@ -164,8 +164,6 @@ fun SlideContent(slide: SingleSlide) {
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        ChatBubble(text = slide.text_content)
-
         if (hasImage) {
             Spacer(modifier = Modifier.height(24.dp))
             AsyncImage(
@@ -173,11 +171,14 @@ fun SlideContent(slide: SingleSlide) {
                 contentDescription = null,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(250.dp)
+                    .heightIn(min = 180.dp, max = 420.dp)
                     .clip(RoundedCornerShape(16.dp)),
-                contentScale = ContentScale.Crop
+                contentScale = ContentScale.Fit
             )
         }
+
+        Spacer(modifier = Modifier.height(24.dp))
+        ChatBubble(text = slide.text_content)
     }
 }
 

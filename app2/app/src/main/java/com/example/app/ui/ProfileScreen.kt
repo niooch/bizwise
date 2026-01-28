@@ -22,7 +22,8 @@ import com.example.app.data.RetrofitClient
 fun ProfileScreen(
     token: String,          // 1. Potrzebujemy tylko tokena
     onBack: () -> Unit,     // 2. Powrót
-    onLogout: () -> Unit    // 3. Wylogowanie
+    onLogout: () -> Unit,   // 3. Wylogowanie
+    onBadgesClick: () -> Unit
 ) {
     // Stan lokalny ekranu
     var userData by remember { mutableStateOf<InformationAboutMe?>(null) }
@@ -126,7 +127,7 @@ fun ProfileScreen(
 
                     // 5. ODZNAKI
                     Button(
-                        onClick = { },
+                        onClick = onBadgesClick,
                         modifier = Modifier.fillMaxWidth().height(50.dp)
                     ) {
                         Text("ZOBACZ ODZNAKI", fontSize = 18.sp)
