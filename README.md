@@ -43,8 +43,8 @@ Projekt kożysta z `CI/CD` do automatycznego wdrażania backendu na serwerze prz
 
 Część frontendowa aplikacji to natywne rozwiązanie na system Android, rozwijane w środowisku Android Studio. 
 
-**Technologie i Bibioteki
-**
+**Technologie i Bibioteki**
+
 - `Język programowania`: Kotlin - nowoczesny język wspierający bezpieczeństwo typów i programowanie asynchroniczne.
 - `UI Framwork`: Jetpack Compose - używany do budowania całego interfejsu użytkownika.
 - `Wczytywanie obrazów`: Używany do asynchronicznego wyświetlania grafik w lekcjach i profilach użytkowników.
