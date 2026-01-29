@@ -41,8 +41,23 @@ Projekt kożysta z `CI/CD` do automatycznego wdrażania backendu na serwerze prz
 
 ## Frontend
 
-Reszta wasza Chłopaki
+Część frontendowa aplikacji to natywne rozwiązanie na system Android, rozwijane w środowisku Android Studio. 
 
+**Technologie i Bibioteki
+**
+- `Język programowania`: Kotlin - nowoczesny język wspierający bezpieczeństwo typów i programowanie asynchroniczne.
+- `UI Framwork`: Jetpack Compose - używany do budowania całego interfejsu użytkownika.
+- `Wczytywanie obrazów`: Używany do asynchronicznego wyświetlania grafik w lekcjach i profilach użytkowników.
+- `Komunikacja sieciowa`: Retrofit - biblioteka obsługująca zapytania do API.
+
+**Generowanie pliku APK**
+W celu wygenerowania gotowej paczki instalacyjnej (APK) należy postępować zgodnie z instrukcją poniżej:
+
+- W górynym rogu Android Studio wybierz **Build -> Build Bundle(s) / APK(s) -> Buil APK(s)**
+- Po zakończeniu procesu w prawym dolnym rogu pojawi się komunikat z powiadomieniem
+- Kliknij odnośnik **locate**, aby otworzyć folder zawierający plik .apk
+
+  
 Kontrybutorzy:
 - Szymon Hładyszewski
 - Wiktor Koczkodaj
