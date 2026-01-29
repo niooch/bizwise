@@ -46,7 +46,7 @@ Część frontendowa aplikacji to natywne rozwiązanie na system Android, rozwij
 **Technologie i Bibioteki**
 
 - `Język programowania`: Kotlin - nowoczesny język wspierający bezpieczeństwo typów i programowanie asynchroniczne.
-- `UI Framwork`: Jetpack Compose - używany do budowania całego interfejsu użytkownika.
+- `UI Framework`: Jetpack Compose - używany do budowania całego interfejsu użytkownika.
 - `Wczytywanie obrazów`: Używany do asynchronicznego wyświetlania grafik w lekcjach i profilach użytkowników.
 - `Komunikacja sieciowa`: Retrofit - biblioteka obsługująca zapytania do API.
 
