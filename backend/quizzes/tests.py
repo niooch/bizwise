@@ -30,6 +30,17 @@ class QuizEndpointsTests(APITestCase):
         pattern = AnswerPattern.objects.create(question=question, pattern="1990-2000")
         return quiz, question, pattern
 
+    def test_quiz_list_returns_all_quizzes(self):
+        Quiz.objects.create(name="Quiz A", exp_weight=10)
+        Quiz.objects.create(name="Quiz B", exp_weight=20)
+        url = reverse("quiz-list")
+
+        resp = self.client.get(url)
+
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        names = {item["name"] for item in resp.data}
+        self.assertEqual(names, {"Quiz A", "Quiz B"})
+
     def test_quiz_detail_hides_correct_flag(self):
         quiz, question, correct, _ = self._make_quiz_with_closed_question()
         url = reverse("quiz-detail", args=[quiz.id])

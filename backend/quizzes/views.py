@@ -8,7 +8,12 @@ from drf_spectacular.utils import extend_schema, inline_serializer
 from django.db.models import F
 
 from .models import Quiz, Question, AnswerOption, QuizResult
-from .serializers import QuizDetailSerializer, QuizSubmitSerializer, QuizAnswerKeySerializer
+from .serializers import (
+    QuizListSerializer,
+    QuizDetailSerializer,
+    QuizSubmitSerializer,
+    QuizAnswerKeySerializer,
+)
 from users.utils import update_user_streak
 from users.badges import award_for_quiz_score
 
@@ -35,6 +40,23 @@ def check_numeric_answer(pattern: str, value: float) -> bool:
             return value == target
         except ValueError:
             return False
+
+
+@extend_schema(
+    tags=["quizzes"],
+    responses=QuizListSerializer(many=True),
+)
+class QuizListView(APIView):
+    """
+    GET /api/quizzes/
+    Returns list of quizzes.
+    """
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        quizzes = Quiz.objects.all().order_by("id")
+        serializer = QuizListSerializer(quizzes, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 @extend_schema(

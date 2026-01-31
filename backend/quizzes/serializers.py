@@ -3,6 +3,12 @@ from rest_framework import serializers
 from .models import Quiz, Question, AnswerOption
 
 
+class QuizListSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Quiz
+        fields = ["id", "name", "exp_weight"]
+
+
 class AnswerOptionPublicSerializer(serializers.ModelSerializer):
     class Meta:
         model = AnswerOption
