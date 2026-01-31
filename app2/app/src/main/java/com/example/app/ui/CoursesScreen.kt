@@ -25,15 +25,12 @@ fun CoursesScreen(
     onBack: () -> Unit,    // Funkcja powrotu
     onCourseClick: (Int) -> Unit //Funkcja do przechodzenia wewnątrz kursu
 ) {
-    // 1. Stany widoku
     var coursesList by remember { mutableStateOf<List<singleCourse>>(emptyList()) }
     var isLoading by remember { mutableStateOf(true) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
 
-    // 2. Pobieranie danych (Side Effect)
     LaunchedEffect(Unit) {
         try {
-            // Pamiętaj o "Bearer " przed tokenem!
             val response = RetrofitClient.api.allCourses("Bearer $token")
 
             if (response.isSuccessful && response.body() != null) {
@@ -50,7 +47,6 @@ fun CoursesScreen(
         }
     }
 
-    // 3. UI
     Scaffold(
         containerColor = Color.Transparent,
         topBar = {
@@ -70,12 +66,10 @@ fun CoursesScreen(
                 .padding(innerPadding)
         ) {
             when {
-                // Przypadek A: Ładowanie
                 isLoading -> {
                     CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
                 }
 
-                // Przypadek B: Błąd
                 errorMessage != null -> {
                     Column(
                         modifier = Modifier.align(Alignment.Center),
@@ -86,7 +80,6 @@ fun CoursesScreen(
                     }
                 }
 
-                // Przypadek C: Pusta lista
                 coursesList.isEmpty() -> {
                     Text(
                         text = "Brak dostępnych kursów",
@@ -95,7 +88,6 @@ fun CoursesScreen(
                     )
                 }
 
-                // Przypadek D: Wyświetlamy listę!
                 else -> {
                     LazyColumn(
                         contentPadding = PaddingValues(16.dp),
@@ -114,7 +106,6 @@ fun CoursesScreen(
     }
 }
 
-// Pomocniczy komponent do wyświetlania pojedynczego kafelka kursu
 @Composable
 fun CourseItem(
     course: singleCourse,
@@ -132,7 +123,6 @@ fun CourseItem(
                 .fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Ikona po lewej
             Icon(
                 imageVector = Icons.Default.List,
                 contentDescription = null,
@@ -142,7 +132,6 @@ fun CourseItem(
 
             Spacer(modifier = Modifier.width(16.dp))
 
-            // Tekst
             Column {
                 Text(
                     text = course.name,

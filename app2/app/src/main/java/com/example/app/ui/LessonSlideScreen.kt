@@ -37,10 +37,12 @@ fun LessonSlidesScreen(
     var slidesData by remember { mutableStateOf<AllSlides?>(null) }
     var currentSlideIndex by remember { mutableStateOf(0) }
     var isLoading by remember { mutableStateOf(true) }
+
     val sortedSlides = remember(slidesData) {
         slidesData?.slides?.sortedBy { it.order } ?: emptyList() //
     }
 
+    // 1. POBIERANIE DANYCH LEKCJI
     LaunchedEffect(lessonId) {
         try {
             val response = RetrofitClient.api.allSlides("Bearer $token", lessonId) //
@@ -55,12 +57,30 @@ fun LessonSlidesScreen(
         }
     }
 
+    // 2. LOGIKA ZALICZANIA LEKCJI (NAPRAWIONA)
+    // LaunchedEffect uruchomi się tylko wtedy, gdy currentSlideIndex osiągnie koniec listy
+    LaunchedEffect(currentSlideIndex) {
+        if (!isLoading && sortedSlides.isNotEmpty() && currentSlideIndex >= sortedSlides.size) {
+            try {
+                // Wywołujemy endpoint zaliczenia lekcji tylko raz
+                val response = RetrofitClient.api.compleLesson("Bearer $token", lessonId)
+                Log.d("LessonSlidesScreen", "Lekcja $lessonId została pomyślnie zaliczona.")
+            } catch (e: Exception) {
+                Log.e("LessonSlidesScreen", "Błąd podczas zaliczania lekcji: ${e.message}")
+            }
+        }
+    }
+
     Scaffold(
         containerColor = Color.Transparent,
         topBar = {
             if (sortedSlides.isNotEmpty()) {
                 LinearProgressIndicator(
-                    progress = { (currentSlideIndex + 1) / sortedSlides.size.toFloat() }, //
+                    progress = {
+                        if (currentSlideIndex < sortedSlides.size)
+                            (currentSlideIndex + 1) / sortedSlides.size.toFloat()
+                        else 1f
+                    }, //
                     modifier = Modifier.fillMaxWidth().height(4.dp),
                 )
             }
@@ -74,7 +94,6 @@ fun LessonSlidesScreen(
             // --- WARSTWA INTERAKCJI (NAWIGACJA LEWO/PRAWO) ---
             if (!isLoading && currentSlideIndex < sortedSlides.size) {
                 Row(modifier = Modifier.fillMaxSize()) {
-                    // Lewa strona - Cofanie
                     Box(
                         modifier = Modifier
                             .fillMaxHeight()
@@ -83,12 +102,9 @@ fun LessonSlidesScreen(
                                 interactionSource = remember { MutableInteractionSource() },
                                 indication = null
                             ) {
-                                if (currentSlideIndex > 0) {
-                                    currentSlideIndex--
-                                }
+                                if (currentSlideIndex > 0) currentSlideIndex--
                             }
                     )
-                    // Prawa strona - Następny
                     Box(
                         modifier = Modifier
                             .fillMaxHeight()
@@ -103,7 +119,6 @@ fun LessonSlidesScreen(
                 }
             }
 
-            // Przycisk zamknij (musi być pod spodem lub nad nawigacją, zależy od UX)
             IconButton(
                 onClick = onBack,
                 modifier = Modifier.align(Alignment.TopEnd).padding(16.dp)
@@ -111,7 +126,6 @@ fun LessonSlidesScreen(
                 Icon(Icons.Default.Close, contentDescription = "Zamknij")
             }
 
-            // Zawartość slajdów
             if (isLoading) {
                 CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
             } else if (sortedSlides.isEmpty() && slidesData != null) {
@@ -138,7 +152,7 @@ fun LessonSlidesScreen(
                 )
 
             } else {
-                // Ekran końcowy
+                // EKRAN KOŃCOWY (Zaliczanie lekcji odbywa się w LaunchedEffect powyżej)
                 Column(
                     modifier = Modifier.align(Alignment.Center),
                     horizontalAlignment = Alignment.CenterHorizontally
@@ -146,7 +160,7 @@ fun LessonSlidesScreen(
                     Text("Lekcja zakończona!", fontSize = 24.sp, fontWeight = FontWeight.Bold)
                     Spacer(modifier = Modifier.height(16.dp))
                     Button(
-                        onClick = { onQuizStart(slidesData?.quiz_id ?: 1) } //
+                        onClick = { onQuizStart(slidesData?.quiz_id ?: 0) } //
                     ) {
                         Text("Rozpocznij Quiz")
                     }
@@ -188,10 +202,7 @@ fun ChatBubble(text: String) {
     Surface(
         color = MaterialTheme.colorScheme.primaryContainer,
         shape = RoundedCornerShape(
-            topStart = 24.dp,
-            topEnd = 24.dp,
-            bottomStart = 4.dp,
-            bottomEnd = 24.dp
+            topStart = 24.dp, topEnd = 24.dp, bottomStart = 4.dp, bottomEnd = 24.dp
         ),
         shadowElevation = 4.dp
     ) {

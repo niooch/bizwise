@@ -8,6 +8,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -17,14 +18,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.app.data.RetrofitClient
-import com.example.app.data.singleCourse
-
-data class QuizItem(
-    val quizId: Int,
-    val lessonId: Int,
-    val lessonName: String,
-    val courseName: String
-)
+import com.example.app.data.QuizListItem
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -33,7 +27,7 @@ fun QuizzesScreen(
     onBack: () -> Unit,
     onQuizClick: (quizId: Int, lessonId: Int) -> Unit
 ) {
-    var quizzes by remember { mutableStateOf<List<QuizItem>>(emptyList()) }
+    var quizzes by remember { mutableStateOf<List<QuizListItem>>(emptyList()) }
     var isLoading by remember { mutableStateOf(true) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
 
@@ -41,68 +35,24 @@ fun QuizzesScreen(
         isLoading = true
         errorMessage = null
         try {
-            // Get all courses
-            val coursesResponse = RetrofitClient.api.allCourses("Bearer $token")
-            if (coursesResponse.isSuccessful && coursesResponse.body() != null) {
-                val courses = coursesResponse.body()!!
-                val allQuizzes = mutableListOf<QuizItem>()
-
-                // For each course, get lessons and find quizzes
-                for (course in courses) {
-                    try {
-                        val courseDetailResponse = RetrofitClient.api.singleLesson(
-                            "Bearer $token",
-                            course.id.toInt()
-                        )
-                        if (courseDetailResponse.isSuccessful && courseDetailResponse.body() != null) {
-                            val courseDetail = courseDetailResponse.body()!!
-
-                            // For each lesson, check if it has a quiz
-                            for (lesson in courseDetail.lessons) {
-                                try {
-                                    val lessonResponse = RetrofitClient.api.allSlides(
-                                        "Bearer $token",
-                                        lesson.id
-                                    )
-                                    if (lessonResponse.isSuccessful && lessonResponse.body() != null) {
-                                        val lessonDetail = lessonResponse.body()!!
-                                        if (lessonDetail.quiz_id != null) {
-                                            allQuizzes.add(
-                                                QuizItem(
-                                                    quizId = lessonDetail.quiz_id,
-                                                    lessonId = lesson.id,
-                                                    lessonName = lesson.name,
-                                                    courseName = course.name
-                                                )
-                                            )
-                                        }
-                                    }
-                                } catch (e: Exception) {
-                                    Log.e("QuizzesScreen", "Error loading lesson ${lesson.id}: ${e.message}")
-                                }
-                            }
-                        }
-                    } catch (e: Exception) {
-                        Log.e("QuizzesScreen", "Error loading course ${course.id}: ${e.message}")
-                    }
-                }
-
-                quizzes = allQuizzes
+            val response = RetrofitClient.api.getAllQuizzes("Bearer $token")
+            if (response.isSuccessful && response.body() != null) {
+                quizzes = response.body()!!
             } else {
-                errorMessage = "Nie udalo sie zaladowac kursow"
+                errorMessage = "Nie udało się załadować listy quizów"
             }
         } catch (e: Exception) {
             Log.e("QuizzesScreen", "Error: ${e.message}")
-            errorMessage = "Blad polaczenia: ${e.message}"
+            errorMessage = "Błąd połączenia: ${e.message}"
+        } finally {
+            isLoading = false
         }
-        isLoading = false
     }
 
     Scaffold(
-        containerColor = Color.Transparent,
         topBar = {
             TopAppBar(
-                title = { Text("Quizy") },
+                title = { Text("Dostępne Quizy", fontWeight = FontWeight.Bold) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Wstecz")
@@ -112,57 +62,25 @@ fun QuizzesScreen(
         }
     ) { innerPadding ->
         when {
-            isLoading -> {
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(innerPadding),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        CircularProgressIndicator()
-                        Spacer(modifier = Modifier.height(16.dp))
-                        Text("Ladowanie quizow...")
-                    }
-                }
+            isLoading -> Box(Modifier.fillMaxSize().padding(innerPadding), Alignment.Center) {
+                CircularProgressIndicator()
             }
-            errorMessage != null -> {
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(innerPadding),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = errorMessage!!,
-                        color = MaterialTheme.colorScheme.error
-                    )
-                }
+            errorMessage != null -> Box(Modifier.fillMaxSize().padding(innerPadding), Alignment.Center) {
+                Text(text = errorMessage!!, color = MaterialTheme.colorScheme.error)
             }
-            quizzes.isEmpty() -> {
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(innerPadding),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text("Brak dostepnych quizow")
-                }
+            quizzes.isEmpty() -> Box(Modifier.fillMaxSize().padding(innerPadding), Alignment.Center) {
+                Text("Brak dostępnych quizów")
             }
             else -> {
                 LazyColumn(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(innerPadding),
+                    modifier = Modifier.fillMaxSize().padding(innerPadding),
                     contentPadding = PaddingValues(16.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     items(quizzes) { quiz ->
                         QuizCard(
                             quiz = quiz,
-                            onClick = { onQuizClick(quiz.quizId, quiz.lessonId) }
+                            onClick = { onQuizClick(quiz.id, quiz.lesson_id ?: 0) }
                         )
                     }
                 }
@@ -173,7 +91,7 @@ fun QuizzesScreen(
 
 @Composable
 fun QuizCard(
-    quiz: QuizItem,
+    quiz: QuizListItem,
     onClick: () -> Unit
 ) {
     Card(
@@ -189,26 +107,34 @@ fun QuizCard(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Column(
-                modifier = Modifier.weight(1f)
-            ) {
+            Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = quiz.lessonName,
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Bold
+                    text = quiz.name,
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.ExtraBold,
+                    color = MaterialTheme.colorScheme.primary
                 )
                 Spacer(modifier = Modifier.height(4.dp))
-                Text(
-                    text = quiz.courseName,
-                    fontSize = 14.sp,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        imageVector = Icons.Default.Star,
+                        contentDescription = null,
+                        modifier = Modifier.size(14.dp),
+                        tint = Color(0xFFFFB300)
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(
+                        text = "Nagroda: ${quiz.exp_weight} EXP",
+                        fontSize = 13.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
             }
             Icon(
                 imageVector = Icons.Default.PlayArrow,
-                contentDescription = "Rozpocznij quiz",
-                tint = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.size(32.dp)
+                contentDescription = "Graj",
+                tint = MaterialTheme.colorScheme.secondary,
+                modifier = Modifier.size(28.dp)
             )
         }
     }

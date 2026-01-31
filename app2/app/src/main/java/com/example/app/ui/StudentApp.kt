@@ -38,183 +38,188 @@ fun StudentApp() {
         ) {
             when (currentScreen) {
 
-            "WELCOME" -> WelcomeScreen(
-                onLoginClick = { currentScreen = "LOGIN" },
-                onRegisterClick = { currentScreen = "REGISTER" }
-            )
+                "WELCOME" -> WelcomeScreen(
+                    onLoginClick = { currentScreen = "LOGIN" },
+                    onRegisterClick = { currentScreen = "REGISTER" }
+                )
 
-            "LOGIN" -> LoginScreen(
-                onBack = { currentScreen = "WELCOME" },
-                onLoginSuccess = { token, refresh ->
-                    userToken = token
-                    logoutToken = refresh
-                    currentScreen = "USERSCREEN"
-                }
-            )
+                "LOGIN" -> LoginScreen(
+                    onBack = { currentScreen = "WELCOME" },
+                    onLoginSuccess = { token, refresh ->
+                        userToken = token
+                        logoutToken = refresh
+                        currentScreen = "USERSCREEN"
+                    }
+                )
 
-            "REGISTER" -> RegisterScreen(
-                onBack = { currentScreen = "WELCOME" }
-            )
+                "REGISTER" -> RegisterScreen(
+                    onBack = { currentScreen = "WELCOME" }
+                )
 
-            "USERSCREEN" -> {
-                // Zabezpieczenie przed nullem
-                if (userToken != null) {
-                    UserScreen(
-                        token = userToken!!,
-                        onProfileClick = {
-                            currentScreen = "PROFILE"
-                        },
-                        onCoursesClick = {
-                            currentScreen = "ALLCOURSES"
-                        },
-                        onQuizzesClick = {
-                            currentScreen = "QUIZZES"
-                        },
-                        onForumClick = {
-                            currentScreen = "FORUM"
-                        }
-                    )
-                } else {
-                    currentScreen = "WELCOME"
+                "USERSCREEN" -> {
+                    // Zabezpieczenie przed nullem
+                    if (userToken != null) {
+                        UserScreen(
+                            token = userToken!!,
+                            onProfileClick = {
+                                currentScreen = "PROFILE"
+                            },
+                            onCoursesClick = {
+                                currentScreen = "ALLCOURSES"
+                            },
+                            onQuizzesClick = {
+                                currentScreen = "QUIZZES"
+                            },
+                            onForumClick = {
+                                currentScreen = "FORUM"
+                            }
+                        )
+                    } else {
+                        currentScreen = "WELCOME"
+                    }
                 }
-            }
 
-            "PROFILE" -> {
-                if (userToken != null) {
-                    ProfileScreen(
-                        token = userToken!!,
-                        onBack = {
-                            currentScreen = "USERSCREEN"
-                        },
-                        onLogout = {
-                            currentScreen = "WELCOME"
-                        },
-                        onBadgesClick = { currentScreen = "BADGES" }
-                    )
-                } else {
-                    currentScreen = "WELCOME"
+                "PROFILE" -> {
+                    if (userToken != null) {
+                        ProfileScreen(
+                            token = userToken!!,
+                            onBack = {
+                                currentScreen = "USERSCREEN"
+                            },
+                            onLogout = {
+                                currentScreen = "WELCOME"
+                            },
+                            onBadgesClick = { currentScreen = "BADGES" }
+                        )
+                    } else {
+                        currentScreen = "WELCOME"
+                    }
                 }
-            }
 
-            "BADGES" -> {
-                if (userToken != null) {
-                    BadgesScreen(
-                        token = userToken!!,
-                        onBack = { currentScreen = "PROFILE" }
-                    )
-                } else {
-                    currentScreen = "WELCOME"
+                "BADGES" -> {
+                    if (userToken != null) {
+                        BadgesScreen(
+                            token = userToken!!,
+                            onBack = { currentScreen = "PROFILE" }
+                        )
+                    } else {
+                        currentScreen = "WELCOME"
+                    }
                 }
-            }
-            "ALLCOURSES" -> {
-                if (userToken != null) {
-                    CoursesScreen(
-                        token = userToken!!,
-                        onBack = {
-                            currentScreen = "USERSCREEN"
-                        },
-                        onCourseClick = { clickedId ->
-                            selectedCourseId = clickedId
-                            currentScreen = "COURSEDETAILSCREEN"
-                        }
-                    )
-                }
-            }
-            "COURSEDETAILSCREEN" -> {
-                if (userToken != null && selectedCourseId != null) {
-                    CourseDetailsScreen(
-                        token = userToken!!,
-                        courseId = selectedCourseId!!,
-                        onBack = { currentScreen = "ALLCOURSES" },
-                        onLessonClick = { clickedId ->
-                            selectedLessonId = clickedId
-                            currentScreen = "LESSONS_SLIDE"
-                        }
-                    )
-                }
-            }
-            "LESSONS_SLIDE" -> {
-                if (userToken != null && selectedLessonId != null) {
-                    LessonSlidesScreen(
-                        token = userToken!!,
-                        lessonId = selectedLessonId!!,
-                        onBack = { currentScreen = "COURSEDETAILSCREEN" },
-                        onQuizStart = { quizId ->
-                            selectedQuizzId = quizId
-                            currentScreen = "QUIZZ_SCREEN" //TODO logika przejscia do quizu
-                        }
-                    )
-                }
-            }
-            "QUIZZ_SCREEN" -> {
-                if (userToken != null && selectedQuizzId != null) {
-                    QuizScreen(
-                        token = userToken!!,
-                        lessonId = selectedLessonId!!,
-                        quizId = selectedQuizzId!!,
-                        onBack = { currentScreen = "COURSEDETAILSCREEN"}
-                    )
-                }
-            }
 
-            "QUIZZES" -> {
-                if (userToken != null) {
-                    QuizzesScreen(
-                        token = userToken!!,
-                        onBack = { currentScreen = "USERSCREEN" },
-                        onQuizClick = { quizId, lessonId ->
-                            selectedQuizzId = quizId
-                            selectedLessonId = lessonId
-                            currentScreen = "QUIZZ_SCREEN_FROM_LIST"
-                        }
-                    )
+                "ALLCOURSES" -> {
+                    if (userToken != null) {
+                        CoursesScreen(
+                            token = userToken!!,
+                            onBack = {
+                                currentScreen = "USERSCREEN"
+                            },
+                            onCourseClick = { clickedId ->
+                                selectedCourseId = clickedId
+                                currentScreen = "COURSEDETAILSCREEN"
+                            }
+                        )
+                    }
                 }
-            }
 
-            "QUIZZ_SCREEN_FROM_LIST" -> {
-                if (userToken != null && selectedQuizzId != null && selectedLessonId != null) {
-                    QuizScreen(
-                        token = userToken!!,
-                        lessonId = selectedLessonId!!,
-                        quizId = selectedQuizzId!!,
-                        onBack = { currentScreen = "QUIZZES" }
-                    )
+                "COURSEDETAILSCREEN" -> {
+                    if (userToken != null && selectedCourseId != null) {
+                        CourseDetailsScreen(
+                            token = userToken!!,
+                            courseId = selectedCourseId!!,
+                            onBack = { currentScreen = "ALLCOURSES" },
+                            onLessonClick = { clickedId ->
+                                selectedLessonId = clickedId
+                                currentScreen = "LESSONS_SLIDE"
+                            }
+                        )
+                    }
                 }
-            }
 
-            "FORUM" -> {
-                if (userToken != null) {
-                    ForumScreen(
-                        token = userToken!!,
-                        onBack = { currentScreen = "USERSCREEN" },
-                        onPostClick = { postId ->
-                            selectedPostId = postId
-                            currentScreen = "POST_DETAIL"
-                        },
-                        onCreatePostClick = {
-                            currentScreen = "CREATE_POST"
-                        }
-                    )
+                "LESSONS_SLIDE" -> {
+                    if (userToken != null && selectedLessonId != null) {
+                        LessonSlidesScreen(
+                            token = userToken!!,
+                            lessonId = selectedLessonId!!,
+                            onBack = { currentScreen = "COURSEDETAILSCREEN" },
+                            onQuizStart = { quizId ->
+                                selectedQuizzId = quizId
+                                currentScreen = "QUIZZ_SCREEN" //TODO logika przejscia do quizu
+                            }
+                        )
+                    }
                 }
-            }
 
-            "POST_DETAIL" -> {
-                if (userToken != null && selectedPostId != null) {
-                    PostDetailScreen(
-                        token = userToken!!,
-                        postId = selectedPostId!!,
-                        onBack = { currentScreen = "FORUM" }
-                    )
+                "QUIZZ_SCREEN" -> {
+                    if (userToken != null && selectedQuizzId != null) {
+                        QuizScreen(
+                            token = userToken!!,
+                            lessonId = selectedLessonId!!,
+                            quizId = selectedQuizzId!!,
+                            onBack = { currentScreen = "COURSEDETAILSCREEN" }
+                        )
+                    }
                 }
-            }
 
-            "CREATE_POST" -> {
-                if (userToken != null) {
-                    CreatePostScreen(
-                        token = userToken!!,
-                        onBack = { currentScreen = "FORUM" },
-                        onPostCreated = { currentScreen = "FORUM" }
-                    )
+                "QUIZZES" -> {
+                    if (userToken != null) {
+                        QuizzesScreen(
+                            token = userToken!!,
+                            onBack = { currentScreen = "USERSCREEN" },
+                            onQuizClick = { quizId, lessonId ->
+                                selectedQuizzId = quizId
+                                selectedLessonId = lessonId
+                                currentScreen = "QUIZZ_SCREEN_FROM_LIST"
+                            }
+                        )
+                    }
+                }
+
+                "QUIZZ_SCREEN_FROM_LIST" -> {
+                    if (userToken != null && selectedQuizzId != null && selectedLessonId != null) {
+                        QuizScreen(
+                            token = userToken!!,
+                            lessonId = selectedLessonId!!,
+                            quizId = selectedQuizzId!!,
+                            onBack = { currentScreen = "QUIZZES" }
+                        )
+                    }
+                }
+
+                "FORUM" -> {
+                    if (userToken != null) {
+                        ForumScreen(
+                            token = userToken!!,
+                            onBack = { currentScreen = "USERSCREEN" },
+                            onPostClick = { postId ->
+                                selectedPostId = postId
+                                currentScreen = "POST_DETAIL"
+                            },
+                            onCreatePostClick = {
+                                currentScreen = "CREATE_POST"
+                            }
+                        )
+                    }
+                }
+
+                "POST_DETAIL" -> {
+                    if (userToken != null && selectedPostId != null) {
+                        PostDetailScreen(
+                            token = userToken!!,
+                            postId = selectedPostId!!,
+                            onBack = { currentScreen = "FORUM" }
+                        )
+                    }
+                }
+
+                "CREATE_POST" -> {
+                    if (userToken != null) {
+                        CreatePostScreen(
+                            token = userToken!!,
+                            onBack = { currentScreen = "FORUM" },
+                            onPostCreated = { currentScreen = "FORUM" }
+                        )
+                    }
                 }
             }
         }
