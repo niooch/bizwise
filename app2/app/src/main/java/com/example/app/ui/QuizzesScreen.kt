@@ -80,7 +80,6 @@ fun QuizzesScreen(
                     items(quizzes) { quiz ->
                         QuizCard(
                             quiz = quiz,
-                            // Jeśli API nie zwraca lesson_id, przekazujemy 0 (do poprawy na backendzie)
                             onClick = { onQuizClick(quiz.id, quiz.lesson_id ?: 0) }
                         )
                     }

@@ -160,6 +160,35 @@ data class ReactionsSummary(
     val reactions: Map<String, Int>
 )
 
+data class QuestionWithAnswer(
+    val id: Int,
+    val question_type: String,
+    val content: String,
+    val correct_answer_options: List<AnswerOpion>?,
+    val correct_numeric_pattern: String?
+)
+
+data class QuizAnswersResponse(
+    val id: Int,
+    val name: String,
+    val questions: List<QuestionWithAnswer>
+)
+
+data class QuizListItem(
+    val id: Int,
+    val name: String,
+    val exp_weight: Int,
+    val lesson_id: Int? = null 
+)
+
+data class Badge(
+    val id: Int,
+    val name: String,
+    val description: String,
+    val image_url: String,
+    val awarded_at: String
+)
+
 interface ApiService {
     @POST("auth/register/") //Option to register
     suspend fun registerUser(@Body request: RegisterRequest): retrofit2.Response<Any>
@@ -194,7 +223,7 @@ interface ApiService {
         @Path("id") slidesId: Int
     ): retrofit2.Response<AllSlides>
 
-    @GET("quizzes/{id}/") //Option to get a quizz which belongs to lessom
+    @GET("quizzes/{id}/") //Option to get a quizz which belongs to lesson
     suspend fun quizzToLesson(
         @Header("Authorization") token: String,
         @Path("id") quizzId: Int
@@ -270,6 +299,22 @@ interface ApiService {
         @Path("id") commentId: Int,
         @Body request: ReactionRequest
     ): retrofit2.Response<ReactionResponse>
+
+    @GET("quizzes/{id}/answers/")
+    suspend fun getQuizAnswers(
+        @Header("Authorization") token: String,
+        @Path("id") quizId: Int,
+    ): retrofit2.Response<QuizAnswersResponse>
+
+    @GET("quizzes/")
+    suspend fun getAllQuizzes(
+        @Header("Authorization") token: String
+    ): retrofit2.Response<List<QuizListItem>>
+
+    @GET("auth/me/badges/")
+    suspend fun getMyBadges(
+        @Header("Authorization") token: String
+    ): retrofit2.Response<List<Badge>>
 }
 
 object RetrofitClient {
