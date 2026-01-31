@@ -22,6 +22,7 @@ Base URL: `/api/` (JWT auth required unless noted). JWTs are issued via SimpleJW
 
 ## Quizzes (`/api/quizzes/…`)
 - `GET /quizzes/<quiz_id>/` — quiz detail without answers. Returns `{ id, name, questions: [{ id, question_type, content, answer_options }] }`; `answer_options` contain `{ id, content }` for closed questions, empty list for open/numeric.
+- `GET /quizzes/<quiz_id>/answers/` — quiz answer key. Returns `{ id, name, questions: [{ id, question_type, content, correct_answer_options, correct_numeric_pattern }] }`; `correct_answer_options` contains only correct options `{ id, content }` for closed questions, and `correct_numeric_pattern` is a string for open/numeric questions (otherwise `null`).
 - `POST /quizzes/<quiz_id>/submit/` — submit answers and score. Body: `{ "answers": [{ "question_id": 1, "selected_option_id": 10 }, { "question_id": 2, "numeric_answer": 1995 }] }` (each answer must include either `selected_option_id` or `numeric_answer`). Response: `{ score, exp_gained, questions_total, correct_answers }`. Also updates stored best score and user streak.
 
 ## Forum (`/api/forum/…`)

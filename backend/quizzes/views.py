@@ -8,7 +8,7 @@ from drf_spectacular.utils import extend_schema, inline_serializer
 from django.db.models import F
 
 from .models import Quiz, Question, AnswerOption, QuizResult
-from .serializers import QuizDetailSerializer, QuizSubmitSerializer
+from .serializers import QuizDetailSerializer, QuizSubmitSerializer, QuizAnswerKeySerializer
 from users.utils import update_user_streak
 from users.badges import award_for_quiz_score
 
@@ -54,6 +54,26 @@ class QuizDetailView(APIView):
             pk=pk,
         )
         serializer = QuizDetailSerializer(quiz)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+@extend_schema(
+    tags=["quizzes"],
+    responses=QuizAnswerKeySerializer,
+)
+class QuizAnswerKeyView(APIView):
+    """
+    GET /api/quizzes/{id}/answers
+    Returns questions WITH correct answers.
+    """
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request, pk: int):
+        quiz = get_object_or_404(
+            Quiz.objects.prefetch_related("questions__answer_options", "questions__answer_pattern"),
+            pk=pk,
+        )
+        serializer = QuizAnswerKeySerializer(quiz)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 

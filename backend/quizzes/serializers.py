@@ -48,3 +48,42 @@ class QuizAnswerSerializer(serializers.Serializer):
 class QuizSubmitSerializer(serializers.Serializer):
     answers = QuizAnswerSerializer(many=True)
 
+
+class AnswerOptionCorrectSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = AnswerOption
+        fields = ["id", "content"]
+
+
+class QuestionAnswerKeySerializer(serializers.ModelSerializer):
+    correct_answer_options = serializers.SerializerMethodField()
+    correct_numeric_pattern = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Question
+        fields = [
+            "id",
+            "question_type",
+            "content",
+            "correct_answer_options",
+            "correct_numeric_pattern",
+        ]
+
+    def get_correct_answer_options(self, obj):
+        if obj.question_type == "CLOSED":
+            options = obj.answer_options.filter(is_correct=True)
+            return AnswerOptionCorrectSerializer(options, many=True).data
+        return []
+
+    def get_correct_numeric_pattern(self, obj):
+        if obj.question_type == "OPEN" and hasattr(obj, "answer_pattern") and obj.answer_pattern:
+            return obj.answer_pattern.pattern
+        return None
+
+
+class QuizAnswerKeySerializer(serializers.ModelSerializer):
+    questions = QuestionAnswerKeySerializer(many=True)
+
+    class Meta:
+        model = Quiz
+        fields = ["id", "name", "questions"]

@@ -3,7 +3,7 @@ from rest_framework import status
 from rest_framework.test import APITestCase
 from django.contrib.auth import get_user_model
 
-from .models import Quiz, Question, AnswerOption, QuizResult, QuestionType
+from .models import Quiz, Question, AnswerOption, QuizResult, QuestionType, AnswerPattern
 
 User = get_user_model()
 
@@ -21,6 +21,14 @@ class QuizEndpointsTests(APITestCase):
         wrong = AnswerOption.objects.create(question=question, content="3", is_correct=False)
         correct = AnswerOption.objects.create(question=question, content="4", is_correct=True)
         return quiz, question, correct, wrong
+
+    def _make_quiz_with_open_question(self):
+        quiz = Quiz.objects.create(name="History Quiz", exp_weight=40)
+        question = Question.objects.create(
+            quiz=quiz, question_type=QuestionType.OPEN, content="Year of event?"
+        )
+        pattern = AnswerPattern.objects.create(question=question, pattern="1990-2000")
+        return quiz, question, pattern
 
     def test_quiz_detail_hides_correct_flag(self):
         quiz, question, correct, _ = self._make_quiz_with_closed_question()
@@ -71,3 +79,33 @@ class QuizEndpointsTests(APITestCase):
         resp_res = self.client.get(results_url)
         self.assertEqual(resp_res.status_code, status.HTTP_200_OK)
         self.assertEqual(resp_res.data["best_score"], 100.0)
+
+    def test_quiz_answers_requires_auth(self):
+        quiz, question, correct, wrong = self._make_quiz_with_closed_question()
+        self.client.force_authenticate(user=None)
+        url = reverse("quiz-answer-key", args=[quiz.id])
+
+        resp = self.client.get(url)
+
+        self.assertEqual(resp.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_quiz_answers_returns_correct_options_and_pattern(self):
+        quiz_closed, question_closed, correct, wrong = self._make_quiz_with_closed_question()
+        quiz_open, question_open, pattern = self._make_quiz_with_open_question()
+
+        url_closed = reverse("quiz-answer-key", args=[quiz_closed.id])
+        resp_closed = self.client.get(url_closed)
+        self.assertEqual(resp_closed.status_code, status.HTTP_200_OK)
+        q = resp_closed.data["questions"][0]
+        self.assertEqual(q["question_type"], QuestionType.CLOSED)
+        self.assertEqual(len(q["correct_answer_options"]), 1)
+        self.assertEqual(q["correct_answer_options"][0]["id"], correct.id)
+        self.assertIsNone(q["correct_numeric_pattern"])
+
+        url_open = reverse("quiz-answer-key", args=[quiz_open.id])
+        resp_open = self.client.get(url_open)
+        self.assertEqual(resp_open.status_code, status.HTTP_200_OK)
+        q_open = resp_open.data["questions"][0]
+        self.assertEqual(q_open["question_type"], QuestionType.OPEN)
+        self.assertEqual(q_open["correct_answer_options"], [])
+        self.assertEqual(q_open["correct_numeric_pattern"], pattern.pattern)
