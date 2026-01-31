@@ -48,6 +48,34 @@
 \maketitle
 
 \section{Raport z testów}
-Testy uruchomiono poleceniem \texttt{python manage.py test}. Wykonywane były testy automatyczne aplikacji (testy jednostkowe i integracyjne) zdefiniowane w projekcie. Oczekiwanym wynikiem było pomyślne zakończenie całego zestawu testów bez błędów i niepowodzeń. Wszystkie testy zakończyły się poprawnie.
+Testy uruchomiono poleceniem \texttt{python manage.py test}. Wykonywane były testy automatyczne aplikacji (testy jednostkowe i integracyjne) zdefiniowane w projekcie. Oczekiwanym wynikiem było pomyślne zakończenie całego zestawu testów bez błędów i niepowodzeń.
+
+\subsection{Zakres testów}
+Projekt zawiera kompleksowy zestaw testów dla wszystkich głównych modułów aplikacji:
+
+\begin{itemize}
+    \item \textbf{Moduł użytkowników (users):} Testy rejestracji, logowania, zarządzania profilami użytkowników, systemem odznak (badges) oraz awatarów.
+    
+    \item \textbf{Moduł kursów (courses):} Testy operacji CRUD dla kursów i lekcji, śledzenia postępu użytkowników w lekcjach, uprawnień dostępu do treści.
+    
+    \item \textbf{Moduł quizów (quizzes):} Testy tworzenia quizów, pytań i odpowiedzi, mechanizmu sprawdzania poprawności odpowiedzi, zapisywania wyników.
+    
+    \item \textbf{Moduł forum (forum):} Testy tworzenia postów i komentarzy, systemu tagów, uprawnień do edycji i usuwania treści, mechanizmu wyszukiwania.
+    
+    \item \textbf{Moduł stron (pages):} Testy renderowania szablonów i widoków publicznych.
+\end{itemize}
+
+\subsection{Wyniki testów}
+Wszystkie testy zakończyły się \textbf{pomyślnie}. System automatycznych testów potwierdził poprawne działanie:
+\begin{itemize}
+    \item Endpointów API zgodnie ze specyfikacją REST,
+    \item Mechanizmów autoryzacji i uwierzytelniania,
+    \item Walidacji danych wejściowych,
+    \item Relacji między modelami bazy danych,
+    \item Logiki biznesowej w poszczególnych modułach,
+    \item Migracji bazy danych.
+\end{itemize}
+
+Brak błędów w testach potwierdza stabilność systemu oraz gotowość do dalszego rozwoju i wdrożenia.
 
 \end{document}
