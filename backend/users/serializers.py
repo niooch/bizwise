@@ -137,13 +137,14 @@ class UserMeSerializer(serializers.ModelSerializer):
     def get_exp(self, obj):
         """
         Simple EXP calculation:
-        sum(best_score * quiz.exp_weight) over all quiz results.
+        sum((best_score / 100) * quiz.exp_weight) over all quiz results.
         PDF mentions exp based on course/quiz weights. :contentReference[oaicite:3]{index=3}
         """
         results = QuizResult.objects.select_related("quiz").filter(user=obj)
         total = 0
         for r in results:
-            total += int(r.best_score * r.quiz.exp_weight)
+            # best_score is a percent (0-100); normalize to match exp_gained calculation
+            total += int(r.best_score / 100.0 * r.quiz.exp_weight)
         return total
 
     def get_streak(self, obj):

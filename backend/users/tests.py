@@ -157,6 +157,30 @@ class UserEndpointsTests(APITestCase):
         self.assertGreaterEqual(len(resp.data), 1)
         self.assertEqual(resp.data[0]["name"], badge.name)
 
+    def test_me_exp_sums_best_score_percent_of_quiz_weight(self):
+        from quizzes.models import Quiz, QuizResult
+
+        quiz_a = Quiz.objects.create(name="Quiz A", exp_weight=50)
+        quiz_b = Quiz.objects.create(name="Quiz B", exp_weight=30)
+        QuizResult.objects.create(
+            user=self.user,
+            quiz=quiz_a,
+            best_score=80.0,
+            last_completion_date=timezone.now(),
+        )
+        QuizResult.objects.create(
+            user=self.user,
+            quiz=quiz_b,
+            best_score=50.0,
+            last_completion_date=timezone.now(),
+        )
+
+        url = reverse("users-me")
+        resp = self.client.get(url)
+
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        self.assertEqual(resp.data["exp"], 55)
+
 
 @override_settings(
     PASSWORD_HASHERS=["django.contrib.auth.hashers.MD5PasswordHasher"],

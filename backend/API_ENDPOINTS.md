@@ -7,7 +7,7 @@ Base URL: `/api/` (JWT auth required unless noted). JWTs are issued via SimpleJW
 - `POST /auth/login/` — obtain JWT tokens. Body: `{ "username": "...", "password": "..." }` (use the nickname chosen at registration as `username`). Returns `{ "access": "...", "refresh": "..." }`.
 - `POST /auth/logout/` — blacklist a refresh token. Body: `{ "refresh": "..." }`.
 - `GET /auth/avatars/` — list available avatars (PNG). Returns `[{ id, name, image_url }]`.
-- `GET /auth/me/` — current user profile. Returns `{ id, username, avatar, exp, streak }` where `avatar` is either `null` or `{ id, name, image_url }`; `streak` is `{ current_streak, best_streak, begin_date, last_activity_date }` (placeholder dates when streak not started yet).
+- `GET /auth/me/` — current user profile. Returns `{ id, username, avatar, exp, streak }` where `avatar` is either `null` or `{ id, name, image_url }`; `streak` is `{ current_streak, best_streak, begin_date, last_activity_date }` (placeholder dates when streak not started yet). `exp` is the sum of `(best_score / 100) * quiz.exp_weight` across the user's quiz results.
 - `GET /auth/me/streak/best/` — best streak summary for the current user. Returns `{ best_streak, begin_date, last_activity_date }` (placeholder dates when missing).
 - `GET /auth/me/streak/current/` — current streak length with dates. Returns `{ current_streak, begin_date, last_activity_date }` (placeholder dates when missing).
 - `GET /auth/me/badges/` — list badges earned by the current user. Returns `[{ id, name, description, image_url, awarded_at }]`.
