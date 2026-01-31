@@ -31,16 +31,13 @@ fun CourseDetailsScreen(
     var isLoading by remember { mutableStateOf(true) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
 
-    // Pobieranie lekcji po wejściu na ekran
     LaunchedEffect(courseId) {
         try {
-            // Wywołujemy endpoint: courses/{id}
             val response = RetrofitClient.api.singleLesson("Bearer $token", courseId)
 
             if (response.isSuccessful && response.body() != null) {
                 val data = response.body()!!
 
-                // Sortujemy lekcje po 'order' żeby były w dobrej kolejności
                 lessonsList = data.lessons.sortedBy { it.order }
             } else {
                 errorMessage = "Błąd: ${response.code()}"
@@ -93,7 +90,6 @@ fun CourseDetailsScreen(
 
 @Composable
 fun LessonItem(lesson: SingleLesson, onClick: () -> Unit) {
-    // Ustalamy kolor i ikonę w zależności od statusu lekcji
     val (icon, tint) = when {
         lesson.locked -> Icons.Default.Lock to Color.Gray
         lesson.completed -> Icons.Default.CheckCircle to Color.Green
@@ -101,7 +97,6 @@ fun LessonItem(lesson: SingleLesson, onClick: () -> Unit) {
     }
 
     Card(
-        // Jeśli lekcja jest zablokowana, nie pozwalamy klikać (opcjonalnie)
         onClick = onClick,
         enabled = !lesson.locked,
         modifier = Modifier.fillMaxWidth(),

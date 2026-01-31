@@ -32,11 +32,11 @@ fun QuizScreen(
     lessonId: Int,
     onBack: () -> Unit
 ) {
-
     val scope = rememberCoroutineScope()
 
-    // Stany danych
+
     var quizData by remember { mutableStateOf<Quizz?>(null) }
+    var quizAnswers by remember { mutableStateOf<QuizAnswersResponse?>(null) }
     var isLoading by remember { mutableStateOf(true) }
 
     var loadError by remember { mutableStateOf<String?>(null) }
@@ -46,6 +46,10 @@ fun QuizScreen(
     var isSubmittingAnswer by remember { mutableStateOf(false) }
     var isQuizFinished by remember { mutableStateOf(false) }
 
+    var isFeedbackVisible by remember { mutableStateOf(false) }
+    var isCurrentAnswerCorrect by remember { mutableStateOf(false) }
+    var feedbackMessage by remember { mutableStateOf("") }
+
     var selectedOptionId by remember { mutableStateOf<Int?>(null) }
     var typedAnswer by remember { mutableStateOf("") }
     val allAnswers = remember { mutableStateListOf<Answer>() }
@@ -53,78 +57,84 @@ fun QuizScreen(
     fun resetSelection() {
         selectedOptionId = null
         typedAnswer = ""
+        isFeedbackVisible = false
+        submitError = null
     }
 
-    fun submitAnswerAndNext(question: Question) {
+    fun checkAnswer(question: Question) {
+        val correctAnswer = quizAnswers?.questions?.find { it.id == question.id }
+
+        if (question.question_type == "CLOSED") {
+            val selectedOption = question.answer_options.find { it.id == selectedOptionId }
+            val correctList = correctAnswer?.correct_answer_options ?: emptyList()
+
+            isCurrentAnswerCorrect = correctList.any { it.content == selectedOption?.content }
+
+            val correctLabels = correctList.joinToString(", ") { it.content }
+            feedbackMessage = if (isCurrentAnswerCorrect) "Poprawna odpowiedź!"
+            else "Nieprawidłowa odpowiedź. Poprawna: $correctLabels"
+        } else {
+            isCurrentAnswerCorrect = typedAnswer == correctAnswer?.correct_numeric_pattern
+            feedbackMessage = if (isCurrentAnswerCorrect) "Poprawna odpowiedź!"
+            else "Nieprawidłowa odpowiedź. Poprawna: ${correctAnswer?.correct_numeric_pattern}"
+        }
+        isFeedbackVisible = true
+    }
+
+    fun handleNext(question: Question) {
+        if (isSubmittingAnswer) return
+
         scope.launch {
-            isSubmittingAnswer = true
-            submitError = null
+            val singleAnswer = if (question.question_type == "CLOSED") {
+                Answer(question_id = question.id, selected_option_id = selectedOptionId ?: 0, numeric_answer = 0)
+            } else {
+                Answer(question_id = question.id, selected_option_id = 0, numeric_answer = typedAnswer.toIntOrNull() ?: 0)
+            }
 
-            try {
-                val isLastQuestion = quizData != null && currentQuestionIndex == quizData!!.questions.size - 1
-                val singleAnswer = if (question.question_type == "CLOSED") {
-                    Answer(
-                        question_id = question.id,
-                        selected_option_id = selectedOptionId ?: 0,
-                        numeric_answer = 0
-                    )
-                } else {
-                    Answer(
-                        question_id = question.id,
-                        selected_option_id = 0,
-                        numeric_answer = typedAnswer.toIntOrNull() ?: 0
-                    )
-                }
+            if (allAnswers.none { it.question_id == singleAnswer.question_id }) {
                 allAnswers.add(singleAnswer)
+            }
 
-                if (!isLastQuestion) {
-                    currentQuestionIndex++
-                    resetSelection()
-                } else {
+            val isLastQuestion = quizData != null && currentQuestionIndex == quizData!!.questions.size - 1
+
+            if (!isLastQuestion) {
+                currentQuestionIndex++
+                resetSelection()
+            } else {
+                isSubmittingAnswer = true
+                submitError = null
+                try {
                     val requestBody = Answers(answers = allAnswers.toList())
-                    RetrofitClient.api.submitAnswear(
-                        token = "Bearer $token",
-                        quizId = quizId,
-                        answers = requestBody
-                    )
+                    RetrofitClient.api.submitAnswear("Bearer $token", quizId, requestBody)
 
-                    RetrofitClient.api.compleLesson(
-                        token = "Bearer $token",
-                        LessonId = lessonId
-                    )
+                    isFeedbackVisible = false
                     isQuizFinished = true
+                } catch (e: Exception) {
+                    Log.e("QuizScreen", "Submit error: ${e.message}")
+                    submitError = "Błąd zapisu wyników: ${e.localizedMessage}"
+                } finally {
+                    isSubmittingAnswer = false
                 }
-
-            } catch (e: Exception) {
-                Log.e("QUIZ", "Submit error: ${e.message}")
-                submitError = "Nie udało się wysłać odpowiedzi. Spróbuj ponownie."
-                if (quizData != null && currentQuestionIndex == quizData!!.questions.size - 1 && allAnswers.isNotEmpty()) {
-                    allAnswers.removeAt(allAnswers.lastIndex)
-                }
-            } finally {
-                isSubmittingAnswer = false
             }
         }
     }
 
-    // 1. Pobieranie quizu
     LaunchedEffect(quizId) {
-        isQuizFinished = false
+        isLoading = true
         loadError = null
-        submitError = null
-        allAnswers.clear()
-        currentQuestionIndex = 0
-        resetSelection()
         try {
-            val response = RetrofitClient.api.quizzToLesson("Bearer $token", quizId)
-            if (response.isSuccessful && response.body() != null) {
-                quizData = response.body()
+            val quizResp = RetrofitClient.api.quizzToLesson("Bearer $token", quizId)
+            val answersResp = RetrofitClient.api.getQuizAnswers("Bearer $token", quizId)
+
+            if (quizResp.isSuccessful && answersResp.isSuccessful) {
+                quizData = quizResp.body()
+                quizAnswers = answersResp.body()
             } else {
-                loadError = "Nie udało się pobrać quizu (Kod: ${response.code()})"
+                loadError = "Błąd API: Quiz(${quizResp.code()}), Odpowiedzi(${answersResp.code()})"
             }
         } catch (e: Exception) {
-            Log.e("QUIZ", "Error: ${e.message}")
             loadError = "Błąd połączenia: ${e.message}"
+            Log.e("QuizScreen", "Error", e)
         } finally {
             isLoading = false
         }
@@ -136,152 +146,126 @@ fun QuizScreen(
             TopAppBar(
                 title = { Text(quizData?.name ?: "Quiz") },
                 navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.Default.Close, contentDescription = "Wyjdź")
-                    }
+                    IconButton(onClick = onBack) { Icon(Icons.Default.Close, "Wyjdź") }
                 }
             )
+        },
+        bottomBar = {
+            // Panel widoczny tylko gdy nie skończyliśmy quizu
+            if (isFeedbackVisible && !isQuizFinished) {
+                Surface(
+                    modifier = Modifier.fillMaxWidth(),
+                    color = if (isCurrentAnswerCorrect) Color(0xFFE8F5E9) else Color(0xFFFFEBEE),
+                    tonalElevation = 8.dp,
+                    shadowElevation = 10.dp
+                ) {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Text(
+                            text = feedbackMessage,
+                            fontWeight = FontWeight.Bold,
+                            color = if (isCurrentAnswerCorrect) Color(0xFF2E7D32) else Color(0xFFC62828),
+                            fontSize = 16.sp
+                        )
+
+                        if (submitError != null) {
+                            Text(
+                                text = submitError!!,
+                                color = Color.Red,
+                                fontSize = 12.sp,
+                                modifier = Modifier.padding(top = 4.dp)
+                            )
+                        }
+
+                        Spacer(modifier = Modifier.height(12.dp))
+
+                        Button(
+                            onClick = { handleNext(quizData!!.questions[currentQuestionIndex]) },
+                            modifier = Modifier.fillMaxWidth(),
+                            enabled = !isSubmittingAnswer,
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = if (isCurrentAnswerCorrect) Color(0xFF4CAF50) else Color(0xFFD32F2F)
+                            )
+                        ) {
+                            if (isSubmittingAnswer) {
+                                CircularProgressIndicator(
+                                    modifier = Modifier.size(24.dp),
+                                    color = Color.White,
+                                    strokeWidth = 2.dp
+                                )
+                            } else {
+                                Text(if (currentQuestionIndex == (quizData?.questions?.size ?: 0) - 1) "Zakończ" else "Dalej")
+                            }
+                        }
+                    }
+                }
+            }
         }
     ) { innerPadding ->
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding)
-        ) {
+        Box(modifier = Modifier.fillMaxSize().padding(innerPadding)) {
             when {
-                isLoading -> {
-                    CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
+                isLoading -> CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
+
+                loadError != null -> Column(modifier = Modifier.align(Alignment.Center).padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text(loadError!!, color = Color.Red, textAlign = TextAlign.Center)
+                    Button(onClick = onBack, Modifier.padding(top = 16.dp)) { Text("Wróć") }
                 }
 
-                loadError != null -> {
-                    Column(
-                        modifier = Modifier.align(Alignment.Center).padding(16.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        Text(
-                            text = loadError ?: "",
-                            color = MaterialTheme.colorScheme.error,
-                            textAlign = TextAlign.Center
-                        )
-                        Spacer(modifier = Modifier.height(16.dp))
-                        Button(onClick = onBack) {
-                            Text("Wróć")
-                        }
+                isQuizFinished -> Column(modifier = Modifier.align(Alignment.Center).padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text("Quiz zakończony!", fontSize = 24.sp, fontWeight = FontWeight.Bold)
+                    Spacer(modifier = Modifier.height(12.dp))
+                    Text("Twoje odpowiedzi zostały wysłane.", textAlign = TextAlign.Center)
+                    Spacer(modifier = Modifier.height(24.dp))
+                    Button(onClick = onBack, modifier = Modifier.fillMaxWidth()) {
+                        Text("Powrót")
                     }
                 }
 
-                isQuizFinished -> {
-                    Column(
-                        modifier = Modifier
-                            .align(Alignment.Center)
-                            .padding(24.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        Text(
-                            text = "Quiz zakończony!",
-                            fontSize = 24.sp,
-                            fontWeight = FontWeight.Bold,
-                            textAlign = TextAlign.Center
-                        )
-                        Spacer(modifier = Modifier.height(12.dp))
-                        Text(
-                            text = "Twoje odpowiedzi zostały zapisane. Możesz wrócić do lekcji lub listy quizów.",
-                            textAlign = TextAlign.Center,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                        Spacer(modifier = Modifier.height(24.dp))
-                        Button(
-                            onClick = onBack,
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Text("Wróć do lekcji")
-                        }
-                    }
-                }
-
-                quizData != null && quizData!!.questions.isNotEmpty() -> {
-
+                quizData != null -> {
                     val questions = quizData!!.questions
                     val currentQuestion = questions[currentQuestionIndex]
                     val progress = (currentQuestionIndex + 1).toFloat() / questions.size
 
-                    Column(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(16.dp)
-                            .verticalScroll(rememberScrollState()),
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
+                    Column(modifier = Modifier.fillMaxSize().padding(16.dp).verticalScroll(rememberScrollState()), horizontalAlignment = Alignment.CenterHorizontally) {
                         LinearProgressIndicator(
                             progress = { progress },
-                            modifier = Modifier.fillMaxWidth().height(8.dp).clip(RoundedCornerShape(4.dp)),
+                            modifier = Modifier.fillMaxWidth().height(8.dp).clip(RoundedCornerShape(4.dp))
                         )
-
+                        Spacer(modifier = Modifier.height(8.dp))
                         Text("Pytanie ${currentQuestionIndex + 1}/${questions.size}", color = Color.Gray, fontSize = 12.sp)
+
                         Spacer(modifier = Modifier.height(24.dp))
-
-                        Text(
-                            text = currentQuestion.content,
-                            fontSize = 20.sp,
-                            fontWeight = FontWeight.Bold,
-                            textAlign = TextAlign.Center
-                        )
-
+                        Text(text = currentQuestion.content, fontSize = 20.sp, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center)
                         Spacer(modifier = Modifier.height(32.dp))
 
                         if (currentQuestion.question_type == "CLOSED") {
                             currentQuestion.answer_options.forEach { option ->
                                 val isSelected = (selectedOptionId == option.id)
                                 Card(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(vertical = 6.dp)
-                                        .clickable { selectedOptionId = option.id },
-                                    shape = RoundedCornerShape(12.dp),
+                                    modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp)
+                                        .clickable(enabled = !isFeedbackVisible) { selectedOptionId = option.id },
                                     border = if (isSelected) BorderStroke(2.dp, MaterialTheme.colorScheme.primary) else null,
-                                    colors = CardDefaults.cardColors(
-                                        containerColor = if (isSelected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant
-                                    )
+                                    colors = CardDefaults.cardColors(containerColor = if (isSelected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant)
                                 ) {
                                     Text(text = option.content, modifier = Modifier.padding(16.dp), fontSize = 16.sp)
                                 }
                             }
-                        } else if (currentQuestion.question_type == "OPEN") {
+                        } else {
                             OutlinedTextField(
                                 value = typedAnswer,
-                                onValueChange = { newValue ->
-                                    if (newValue.all { it.isDigit() }) typedAnswer = newValue
-                                },
+                                onValueChange = { if (it.all { c -> c.isDigit() }) typedAnswer = it },
                                 label = { Text("Wpisz liczbę") },
+                                enabled = !isFeedbackVisible,
                                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                                singleLine = true,
-                                modifier = Modifier.fillMaxWidth(),
-                                textStyle = LocalTextStyle.current.copy(textAlign = TextAlign.Center, fontSize = 24.sp)
+                                modifier = Modifier.fillMaxWidth()
                             )
                         }
 
-                        Spacer(modifier = Modifier.height(24.dp))
-
-                        // Tutaj też możemy wyświetlić błąd wysyłania (mały czerwony tekst nad przyciskiem)
-                        if (submitError != null) {
-                            Text(submitError!!, color = Color.Red, fontSize = 14.sp)
-                            Spacer(modifier = Modifier.height(8.dp))
-                        }
-
-                        Button(
-                            onClick = { submitAnswerAndNext(currentQuestion) },
-                            enabled = !isSubmittingAnswer && (selectedOptionId != null || typedAnswer.isNotEmpty()),
-                            modifier = Modifier.fillMaxWidth().height(50.dp)
-                        ) {
-                            if (isSubmittingAnswer) {
-                                CircularProgressIndicator(color = Color.White, modifier = Modifier.size(24.dp))
-                            } else {
-                                if (currentQuestionIndex == questions.size -1 ) {
-                                    Text("Zakończ Quiz")
-                                } else {
-                                    Text("Następne pytanie")
-                                }
-                            }
+                        if (!isFeedbackVisible) {
+                            Button(
+                                onClick = { checkAnswer(currentQuestion) },
+                                enabled = selectedOptionId != null || typedAnswer.isNotEmpty(),
+                                modifier = Modifier.fillMaxWidth().padding(top = 32.dp).height(50.dp)
+                            ) { Text("Sprawdź odpowiedź") }
                         }
                     }
                 }
