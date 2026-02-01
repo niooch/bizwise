@@ -1,15 +1,19 @@
 package com.example.app.ui
 
+import android.util.Log
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import coil.compose.AsyncImage
 import com.example.app.data.InformationAboutMe
 import com.example.app.data.RetrofitClient
 
@@ -26,91 +30,88 @@ fun UserScreen(
     LaunchedEffect(Unit) {
         try {
             val response = RetrofitClient.api.informationAboutMe("Bearer $token")
-
             if (response.isSuccessful && response.body() != null) {
                 userData = response.body()
             }
         } catch (e: Exception) {
-            //TODO: Obsługa błędu
+            Log.e("UserScreen", "Error: ${e.message}")
         }
     }
+
     Scaffold(
         containerColor = Color.Transparent,
-        // DOLNY PASEK (K, Q, F)
         bottomBar = {
             NavigationBar {
-                // Ikona K (np. Kursy)
                 NavigationBarItem(
                     selected = false,
                     onClick = onCoursesClick,
-                    icon = {
-                        Text("K", fontSize = 20.sp, fontWeight = FontWeight.Bold)
-                    },
+                    icon = { Text("K", fontSize = 20.sp, fontWeight = FontWeight.Bold) },
                     label = { Text("Kursy") }
                 )
-
-                // Ikona Q
                 NavigationBarItem(
                     selected = false,
                     onClick = onQuizzesClick,
-                    icon = {
-                        Text("Q", fontSize = 20.sp, fontWeight = FontWeight.Bold)
-                    },
+                    icon = { Text("Q", fontSize = 20.sp, fontWeight = FontWeight.Bold) },
                     label = { Text("Quizy") }
                 )
-
-                // Ikona F
                 NavigationBarItem(
                     selected = false,
                     onClick = onForumClick,
-                    icon = {
-                        Text("F", fontSize = 20.sp, fontWeight = FontWeight.Bold)
-                    },
+                    icon = { Text("F", fontSize = 20.sp, fontWeight = FontWeight.Bold) },
                     label = { Text("Forum") }
                 )
             }
         }
     ) { innerPadding ->
-        // --- GŁÓWNA ZAWARTOŚĆ ---
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(innerPadding) // Ważne: uwzględnia miejsce zajęte przez dolny pasek
+                .padding(innerPadding)
         ) {
 
-            // --- PRAWY GÓRNY RÓG (Ikona P) ---
             IconButton(
                 onClick = onProfileClick,
                 modifier = Modifier
-                    .align(Alignment.TopEnd) // Przyklej do prawego górnego rogu
+                    .align(Alignment.TopEnd)
                     .padding(16.dp)
+                    .size(48.dp)
             ) {
-                // Robię kółeczko, żeby wyglądało jak awatar
-                Surface(
-                    shape = CircleShape,
-                    color = MaterialTheme.colorScheme.primaryContainer,
-                    modifier = Modifier.size(48.dp)
-                ) {
-                    Box(contentAlignment = Alignment.Center) {
-                        Text("P", fontWeight = FontWeight.Bold)
+                if (userData?.avatar?.image_url != null) {
+                    AsyncImage(
+                        model = userData!!.avatar!!.image_url,
+                        contentDescription = "Profil",
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .clip(CircleShape),
+                        contentScale = ContentScale.Crop
+                    )
+                } else {
+                    Surface(
+                        shape = CircleShape,
+                        color = MaterialTheme.colorScheme.primaryContainer,
+                        modifier = Modifier.fillMaxSize()
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Text(
+                                text = userData?.username?.take(1)?.uppercase() ?: "P",
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
                     }
                 }
             }
 
-            // --- ŚRODEK (Powitanie) ---
             Column(
                 modifier = Modifier.align(Alignment.Center),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 if (userData != null) {
-                    // Jeśli mamy dane z JSONa
                     Text(
-                        text = "Witaj ${userData!!.username}", //TODO: poprawić !!, to niebezpieczne
+                        text = "Witaj ${userData!!.username}",
                         fontSize = 28.sp,
                         fontWeight = FontWeight.Bold
                     )
                 } else {
-                    // Jeśli dane się jeszcze ładują lub jest błąd
                     Text("Witaj Studencie", fontSize = 28.sp, fontWeight = FontWeight.Bold)
                     Spacer(modifier = Modifier.height(8.dp))
                     CircularProgressIndicator(modifier = Modifier.size(32.dp))
