@@ -28,21 +28,22 @@ data class TokenResponse(
 )
 
 data class Streak(
+    val current_streak: Int,
     val best_streak: Int,
     val begin_date: String,
     val last_activity_date: String
 )
 
 data class InformationAboutMe(
-    val id: Integer,
+    val id: Int,
     val username: String,
-    val avatar: String,
-    val exp: String,
+    val avatar: Avatar?, // Zmieniono ze String na obiekt Avatar
+    val exp: Int,        // Zmieniono na Int zgodnie z JSONem
     val streak: Streak
 )
 
 data class singleCourse(
-    val id: Integer,
+    val id: Int,
     val name: String
 )
 
@@ -189,6 +190,16 @@ data class Badge(
     val awarded_at: String
 )
 
+data class Avatar(
+    val id: Int,
+    val name: String,
+    val image_url: String
+)
+
+data class AvatarUpdate(
+    val avatar_id: Int
+)
+
 interface ApiService {
     @POST("auth/register/") //Option to register
     suspend fun registerUser(@Body request: RegisterRequest): retrofit2.Response<Any>
@@ -315,6 +326,17 @@ interface ApiService {
     suspend fun getMyBadges(
         @Header("Authorization") token: String
     ): retrofit2.Response<List<Badge>>
+
+    @GET("auth/avatars/")
+    suspend fun getAvatars(
+        @Header("Authorization") token: String
+    ): retrofit2.Response<List<Avatar>>
+
+    @PATCH("auth/me/avatar/")
+    suspend fun updateAvatar(
+        @Header("Authorization") token: String,
+        @Body request: AvatarUpdate
+    ): retrofit2.Response<Any>
 }
 
 object RetrofitClient {
