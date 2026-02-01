@@ -40,42 +40,329 @@
 \setcounter{tocdepth}{2}
 
 % --- Meta ---
-\title{Sprawozdanie z etapu 3.}
+\title{Sprawozdanie z etapu 5.}
 \author{Szymon Hładyszewski, Wiktor Koczkodaj, Jakub Kogut, Wojciech Typer}
 \date{\today}
 
 \begin{document}
 \maketitle
+\section{Dokumentacja}
+Dokumentacja endpointów REST API znajduje się pod adresem \url{wealthwise.pl/api/docs}. Szczegółowa dokumentacja została opisana w Sprawozdaniu nr 3. Została ona ściśle podtrzymna podczas dalszej implementacji.
+\section{Backend}
+Nasz backend będzie odpowiedziany za przechowywanie oraz przetwarzanie wszelakich danych jak i musi posiadać \textit{user friendly} metodę na ich wpowadzenie. W tym celu zdecydowaliśmy się na użycie frameworku \textbf{Django} wraz z \textbf{Django REST Framework} do stworzenia API. Do przechowywania danych użyjemy bazy danych \textbf{PostgreSQL}, która jest utrzymywana przez \textbf{Django}.
+\subsection{Baza danych}
+W bazie danych przechowywane będą wszelkie dane dotyczące użytkowników jak i zdobytych przez nich nagród, czy dane do kursów oraz quizów, a także forum.
+\subsubsection{Tabele}
+W bazie danych znajdować się będą następujące tabele:
+\begin{itemize}
+    \item \textbf{User}: przechowuje dane użytkowników
+        \begin{itemize}
+            \item \texttt{id} \textbf(PK) - unikalny identyfikator użytkownika
+            \item \texttt{nickname} - nazwa użytkownika \textit{unique}
+            \item \texttt{password\_hash} - zahashowane hasło użytkownika
+            \item \texttt{avatar\_id} - identyfikator avatara użytkownika (możliwe rozszezenie bazy o tabelę Avatar)
+        \end{itemize}
+    \item \textbf{Course}: zawiera kursy dostępne w serwisie
+        \begin{itemize}
+            \item \texttt{id} \textbf{(PK)} - unikalny identyfikator kursu
+            \item \texttt{name} - tytuł kursu
+        \end{itemize}
+    \item \textbf{Lesson}: reprezentuje lekcje, z których składają się kursy
+        \begin{itemize}
+            \item \texttt{id} \textbf{(PK)} - unikalny identyfikator lekcji
+            \item \texttt{name} - tytuł lekcji
+        \end{itemize}
+    \item \textbf{Slide}: reprezentuje slajdy w lekcjach
+        \begin{itemize}
+            \item \texttt{id} \textbf{(PK)} - unikalny identyfikator slajdu
+            \item \texttt{lesson\_id} \textbf{(FK)} - identyfikator lekcji, do której należy slajd
+            \item \texttt{text\_content} - treść slajdu 
+            \item \texttt{order} - kolejność slajdu w lekcji
+            \item \texttt{image\_url} - (opcjonalnie) URL do obrazka na slajdzie
+        \end{itemize}
+    \item \textbf{Quiz}: 
+        \begin{itemize}
+            \item \texttt{id} \textbf{(PK)} - unikalny identyfikator quizu
+            \item \texttt{name} - tytuł quizu
+            \item \texttt{exp\_weight} - waga doświadczenia za poprawne rozwiązanie quizu
+        \end{itemize}
+    \item \textbf{Question}: pytania w quizach
+        \begin{itemize}
+            \item \texttt{id} \textbf{(PK)} - unikalny identyfikator pytania
+            \item \texttt{quiz\_id} \textbf{(FK)} - identyfikator quizu, do którego należy pytanie
+            \item \texttt{question\_type} - typ pytania (otwarte/zamknięte)
+            \item \texttt{content} - treść pytania
+        \end{itemize}
+    \item \textbf{AnswerPattern}: wzorce odpowiedzi dla otwartych pytań (wartości numeryczne)
+        \begin{itemize}
+            \item \texttt{id} \textbf{(PK)} - unikalny identyfikator wzorca odpowiedzi
+            \item \texttt{question\_id} \textbf{(FK)} - identyfikator pytania, do którego należy wzorzec
+            \item \texttt{pattern} - wzorzec odpowiedzi (np. zakres wartości)
+        \end{itemize}
+    \item \textbf{AnswerOption}: możliwe odpowiedzi dla pytań zamkniętych
+        \begin{itemize}
+            \item \texttt{id} \textbf{(PK)} - unikalny identyfikator opcji odpowiedzi
+            \item \texttt{question\_id} \textbf{(FK)} - identyfikator pytania, do którego należy opcja
+            \item \texttt{content} - treść opcji odpowiedzi
+            \item \texttt{is\_correct} - czy opcja jest poprawną odpowiedzią
+        \end{itemize}
+    \item \textbf{UserProgress}: śledzi postępy użytkowników w kursach (zabezpieczenie przed ponownym zdobywaniem expa)
+        \begin{itemize}
+            \item \texttt{id} \textbf{(PK)} - unikalny identyfikator postępu
+            \item \texttt{user\_id} \textbf{(FK)} - identyfikator użytkownika
+            \item \texttt{course\_id} \textbf{(FK)} - identyfikator kursu
+            \item \texttt{completion\_date} - data i czas ukończenia kursu
+        \end{itemize}
+    \item \textbf{Post}: posty na forum
+        \begin{itemize}
+            \item \texttt{id} \textbf{(PK)} - unikalny identyfikator postu
+            \item \texttt{user\_id} \textbf{(FK)} - identyfikator autora postu
+            \item \texttt{title} - tytuł postu
+            \item \texttt{content} - treść postu
+            \item \texttt{creation\_date} - data i czas utworzenia postu
+        \end{itemize}
+    \item \textbf{Tag}: tagi przypisane do postów
+        \begin{itemize}
+            \item \texttt{id} \textbf{(PK)} - unikalny identyfikator tagu
+            \item \texttt{name} - nazwa tagu
+        \end{itemize}
+    \item \textbf{Comment}: komentarze do postów na forum
+        \begin{itemize}
+            \item \texttt{id} \textbf{(PK)} - unikalny identyfikator komentarza
+            \item \texttt{post\_id} \textbf{(FK)} - identyfikator postu, do którego należy komentarz
+            \item \texttt{parent\_comment\_id} \textbf{(FK, nullable)} - identyfikator komentarza nadrzędnego (jeśli to odpowiedź)
+            \item \texttt{user\_id} \textbf{(FK)} - identyfikator autora komentarza
+            \item \texttt{content} - treść komentarza
+            \item \texttt{creation\_date} - data i czas utworzenia komentarza
+        \end{itemize}
+    \item \textbf{Reaction}: tabela reakcji (upvoty/reakcje emoji) do postów i komentarzy
+        \begin{itemize}
+            \item \texttt{id} \textbf{(PK)} - unikalny identyfikator reakcji
+            \item \texttt{reaction\_type} - typ reakcji (np. upvot, emoji)
+        \end{itemize}
+    \item \textbf{UserStreak}: do przechowywania danych o długości streaków użytkowników\footnote{można by rozważyć czy nie przechowywać to w tabeli User, ale wydaje się to bardziej czytelne}
+        \begin{itemize}
+            \item \texttt{user\_id} \textbf{(PK, FK)} - identyfikator użytkownika
+            \item \texttt{best\_streak} - aktualny streak użytkownika (najdłuższy)
+            \item \texttt{begin\_date} - data rozpoczęcia aktualnego streaku
+            \item \texttt{last\_activity\_date} - data ostatniej aktywności użytkownika
+        \end{itemize}
+\end{itemize}
+Oraz wymagane tabele łączące:
+\begin{itemize}
+    \item \textbf{QuizResult}: przechowuje wyniki quizów użytkowników
+        \begin{itemize}
+            \item \texttt{user\_id} \textbf{(PK, FK)} - identyfikator użytkownika
+            \item \texttt{quiz\_id} \textbf{(PK, FK)} - identyfikator quizu
+            \item \texttt{best\_score} - najlepszy wynik uzyskany w quizie
+            \item \texttt{last\_completion\_date} - data i czas ukończenia quizu
+        \end{itemize}
+    \item \textbf{CourseLesson}: łącząca kursy z lekcjami
+        \begin{itemize}
+            \item \texttt{course\_id} \textbf{(PK, FK)} - identyfikator kursu
+            \item \texttt{lesson\_id} \textbf{(PK, FK)} - identyfikator lekcji
+            \item \texttt{order} - kolejność lekcji w kursie
+        \end{itemize}
+    \item \textbf{LessonQuiz}: łącząca lekcje z quizami
+        \begin{itemize}
+            \item \texttt{lesson\_id} \textbf{(PK, FK)} - identyfikator lekcji
+            \item \texttt{quiz\_id} \textbf{(PK, FK)} - identyfikator quizu
+        \end{itemize}
+    \item \textbf{PostTag}: łącząca posty z tagami
+        \begin{itemize}
+            \item \texttt{post\_id} \textbf{(PK, FK)} - identyfikator postu
+            \item \texttt{tag\_id} \textbf{(PK, FK)} - identyfikator tagu
+        \end{itemize}
+    \item \textbf{PostReaction}: łącząca posty z reakcjami
+        \begin{itemize}
+            \item \texttt{post\_id} \textbf{(PK, FK)} - identyfikator postu
+            \item \texttt{reaction\_id} \textbf{(PK, FK)} - identyfikator reakcji
+            \item \texttt{user\_id} \textbf{(PK, FK)} - identyfikator użytkownika, który dodał reakcję
+        \end{itemize}
+    \item \textbf{CommentReaction}: łącząca komentarze z reakcjami
+        \begin{itemize}
+            \item \texttt{comment\_id} \textbf{(PK, FK)} - identyfikator komentarza
+            \item \texttt{reaction\_id} \textbf{(PK, FK)} - identyfikator reakcji
+            \item \texttt{user\_id} \textbf{(PK, FK)} - identyfikator użytkownika, który dodał reakcję
+        \end{itemize}
+\end{itemize}
+Staraliśmy się, aby baza danych była znormalizowana do trzeciej postaci normalnej (3NF), co pozwoli uniknąć redundancji danych oraz zapewnić integralność referencyjną.
+
+Poniżej znajduje się diagram ERD przedstawiający strukturę bazy danych oraz relacje między tabelami.
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.8\textwidth]{schematERD.png}
+    \caption{Diagram ERD bazy danych}
+    \label{fig:schemaERD}
+\end{figure}
+
+\subsubsection{Funkcje, Triggery}
+Zaplanowaliśmy również kilka funkcji oraz triggerów w bazie danych, które będą automatyzowały pewne procesy:
+\begin{itemize}
+    \item Funkcja do aktualizacji streaku użytkownika w tabeli \textbf{UserStreak}. Przy każdym logowaniu należy sprawdzić datę ostatniej aktywności i jeżeli było to dzień wcześniej, zwiększyć aktualny streak o 1. Jeżeli nie było, to ustawić datę \texttt{begin\_date} oraz \texttt{last\_activity\_date} na dzisiejszą datę i zresetować. \\
+        Przy wykonaniu quizu należy ustawić \texttt{last\_activity\_date} na dzisiejszą datę i sprawdzić czy streak jest dłuższy niż \texttt{best\_streak}, jeżeli tak to zaktualizować.
+    \item Trigger po dodaniu rekordu do tabeli \textbf{UserProgress}, który będzie nadawał użytkownikowi odpowiednią ilość expa na podstawie wagi kursu.
+    \item Odpowiednio utrzymywać dane w tabelach związanych z \texttt{Comment}/\texttt{Post} przy usuwaniu postów/komentarzy (kaskadowe usuwanie lub ustawianie na NULL w przypadku komentarzy nadrzędnych)
+\end{itemize}
+\subsection{Permisje}
+Aby zabezpieczyć aplikację przed nieautoryzowanym dostępem, wprowadzimy system permisji. Użytkownicy będą podzieleni na dwie grupy:
+\begin{itemize}
+    \item \textbf{Użytkownicy zarejestrowani}\footnote{restracja poprzez nickname i hasło} - będą mieli dostęp do kursów, quizów oraz forum, nagród innych użytkowników
+    \item \textbf{Administratorzy} - będą mieli dostęp do interfejsu administratora, gdzie będą mogli zarządzać kursami, quizami oraz użytkownikami
+\end{itemize}
+Dodatkowo, jeżeli użytkownik chciałby edytować/usunąć swój post/komentarz na forum, będzie wymagane sprawdzenie czy jest on autorem danego postu/komentarza.
+
+
+\section{Interfejs administratora}
+Django posiada wbudowany interfejs administratora, który pozwala na zarządzanie bazą danych bez konieczności tworzenia własnego panelu. W naszym projekcie wykorzystamy ten interfejs do zarządzania w szególności kursami oraz quizami.\\
+Administrator będzie miał możliwość tworzenia oraz edytowania poprzez interfejs administratora:
+\begin{itemize}
+    \item tworzenie lekcji na podstawie dodawania slaidów z tekstem, ewentualnie obrazkami
+    \item tworzenie quizów na podstawie pytań otwartych (warości numeryczne) oraz zamkniętych.
+    \item dodawanie avatarów użytkowników (userzy mogą wybierać avatary z puli dostępnych w serwisie)
+\end{itemize}
+
+\section{Diagramy}
+Poniżej przedstawiamy diagramy przedstawiające strukturę projektu:
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.3\textwidth]{diagramPrzypadkowUzycia.png}
+    \caption{Diagram przypadków użycia}
+    \label{fig:useCaseDiagram}
+\end{figure}
+
+\newpage
+\section{Aplikacja Mobilna}
+Front-end naszego systemu zostanie zrealizowany jako natywna aplikacja mobilna na system Android. Aplikacja będzie stanowiła główny interfejs dla użytkownika, umożliwiając interakcję z danymi dostarczanymi przez API backendowe. Zgodnie z założeniami, do jej stworzenia wykorzystamy język \textbf{Kotlin} oraz nowoczesny toolkit UI – \textbf{Jetpack Compose}.
+
+\subsection{Główne moduły i ekrany}
+Struktura nawigacji aplikacji została podzielona na kilka kluczowych obszarów funkcjonalnych:
+
+\subsubsection{Moduł Autentykacji}
+Odpowiada za zarządzanie dostępem do aplikacji.
+\begin{itemize}
+    \item \textbf{Ekran Startowy}: Pierwszy widok witający użytkownika, pozwalający na wybór między logowaniem a rejestracją.
+    \item \textbf{Ekran Rejestracji/Logowania}: Formularze umożliwiające wprowadzenie danych (nickname, hasło). Moduł ten będzie obsługiwał walidację danych wejściowych po stronie klienta oraz bezpieczne przechowywanie otrzymanego od backendu tokena autoryzacyjnego.
+\end{itemize}
+
+\subsubsection{Moduł Profilu Użytkownika}
+Centrum informacji o postępach gracza.
+\begin{itemize}
+    \item Wyświetlanie awatara oraz nazwy użytkownika.
+    \item Prezentacja statystyk: aktualny \texttt{streak} oraz historia zdobytych punktów doświadczenia.
+    \item Historia ukończonych kursów i quizów.
+\end{itemize}
+
+\subsubsection{System Nauki (Learning Path)}
+Rdzeń aplikacji, realizujący przepływ wiedzy od kursu do sprawdzenia wiedzy.
+\begin{itemize}
+    \item \textbf{Lista Kursów}: Ekran prezentujący dostępne kursy  wraz z paskiem postępu.
+    \item \textbf{Ekran Lekcji i Slajdów}: Widok szczegółowy lekcji. Slajdy będą wyświetlane sekwencyjnie. Aplikacja będzie obsługiwać renderowanie tekstu oraz ładowanie obrazów z sieci.
+    \item \textbf{Przepływ (Flow)}: Użytkownik będzie mógł przejść do następnego slajdu/lekcji dopiero po zapoznaniu się z obecnym, co wymusza liniowy proces nauki.
+\end{itemize}
+
+\subsubsection{Moduł Quizów}
+Interfejs do weryfikacji wiedzy, obsługujący logikę pytań zdefiniowanych w bazie danych.
+\begin{itemize}
+    \item \textbf{Ekran Quizu}: Dynamiczny widok obsługujący dwa typy pytań:
+        \begin{itemize}
+            \item \textit{Zamknięte}: Lista opcji wyboru na podstawie danych z bazy.
+            \item \textit{Otwarte}: Pola tekstowe/numeryczne.
+        \end{itemize}
+    \item \textbf{Ekran Wyników}: Po zakończeniu quizu aplikacja wyśle odpowiedzi do API, a następnie wyświetli uzyskany wynik, zdobytą liczbę punktów doświadczenia oraz informację o ewentualnej aktualizacji streaku.
+    \item \textbf{Tryb Samodzielnej Nauki}: Osobny ekran pozwalający na uruchomienie losowych quizów bez powiązania z konkretną lekcją, w celu utrwalenia wiedzy.
+\end{itemize}
+
+\subsubsection{Forum Dyskusyjne}
+Społecznościowy aspekt aplikacji.
+\begin{itemize}
+    \item \textbf{Lista Wątków}: Wyświetlanie postów (\textbf{Post}) z możliwością filtrowania po tagach (\textbf{Tag}).
+    \item \textbf{Szczegóły Posta}: Widok pojedynczego wątku wraz z drzewiastą strukturą komentarzy (\textbf{Comment}).
+    \item \textbf{Interakcje}: Możliwość dodawania nowych postów, komentowania oraz dodawania reakcji (upvote) do treści innych użytkowników.
+\end{itemize}
+
+\subsection{Komunikacja i obsługa błędów}
+Aplikacja zostanie wyposażona w globalny mechanizm obsługi błędów:
+\begin{itemize}
+    \item \textbf{Brak połączenia z internetem}: Wyświetlenie odpowiedniego komunikatu i zablokowanie akcji wymagających synchronizacji z API.
+    \item \textbf{Obsługa błędów HTTP}: Interpretacja kodów błędów (np. 401 Unauthorized - wymuszenie wylogowania, 404 Not Found - odpowiedni ekran błędu).
+\end{itemize}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.9\textwidth]{mobile_architecture.png}
+    \caption{Diagram UML dla aplikacji mobilnej}
+    \label{fig:mobileArchitecture}
+\end{figure}
 
 \section{Raport z testów}
-Testy uruchomiono poleceniem \texttt{python manage.py test}. Wykonywane były testy automatyczne aplikacji (testy jednostkowe i integracyjne) zdefiniowane w projekcie. Oczekiwanym wynikiem było pomyślne zakończenie całego zestawu testów bez błędów i niepowodzeń.
+Testy uruchomiono poleceniem \texttt{python manage.py test}. Wykonywane były testy automatyczne aplikacji (testy jednostkowe i integracyjne) zdefiniowane w projekcie. Konfiguracja testowa korzysta z bazy SQLite (\texttt{config/settings\_test.py}), co umożliwia szybkie uruchamianie scenariuszy bez zależności zewnętrznych. Oczekiwanym wynikiem było pomyślne zakończenie całego zestawu testów bez błędów i niepowodzeń.
+
+\subsection{Struktura backendu}
+Backend to projekt Django z wyodrębnionymi aplikacjami domenowymi:
+\begin{itemize}
+    \item \textbf{users} -- konta, profile, awatary, odznaki oraz logika streaków,
+    \item \textbf{courses} -- kursy, lekcje, slajdy, postępy użytkowników,
+    \item \textbf{quizzes} -- quizy, pytania, odpowiedzi i wyniki,
+    \item \textbf{forum} -- posty, komentarze i reakcje,
+    \item \textbf{pages} -- widoki publiczne i szablony,
+    \item \textbf{config} -- ustawienia projektu (w tym ustawienia testowe).
+\end{itemize}
 
 \subsection{Zakres testów}
-Projekt zawiera kompleksowy zestaw testów dla wszystkich głównych modułów aplikacji:
 
-\begin{itemize}
-    \item \textbf{Moduł użytkowników (users):} Testy rejestracji, logowania, zarządzania profilami użytkowników, systemem odznak (badges) oraz awatarów.
-    
-    \item \textbf{Moduł kursów (courses):} Testy operacji CRUD dla kursów i lekcji, śledzenia postępu użytkowników w lekcjach, uprawnień dostępu do treści.
-    
-    \item \textbf{Moduł quizów (quizzes):} Testy tworzenia quizów, pytań i odpowiedzi, mechanizmu sprawdzania poprawności odpowiedzi, zapisywania wyników.
-    
-    \item \textbf{Moduł forum (forum):} Testy tworzenia postów i komentarzy, systemu tagów, uprawnień do edycji i usuwania treści, mechanizmu wyszukiwania.
-    
-    \item \textbf{Moduł stron (pages):} Testy renderowania szablonów i widoków publicznych.
-\end{itemize}
+\subsubsection*{Moduł users (15 testów)}
+\begin{enumerate}
+    \item \textbf{Logowanie z poprawnymi danymi:} wysłanie loginu i hasła zwraca kod 200 oraz tokeny \texttt{access} i \texttt{refresh}.
+    \item \textbf{Logowanie bez nazwy użytkownika:} brak pola \texttt{username} zwraca kod 400 i błąd walidacji.
+    \item \textbf{Rejestracja:} poprawny payload tworzy użytkownika i zwraca tokeny.
+    \item \textbf{Profil \texttt{me}:} odpowiedź zawiera podstawowe pola profilu (m.in. \texttt{username}, \texttt{avatar}, \texttt{exp}, \texttt{streak}).
+    \item \textbf{Lista awatarów:} endpoint zwraca listę dostępnych awatarów.
+    \item \textbf{Ukończone kursy:} endpoint \texttt{me/progress} zawiera identyfikatory ukończonych kursów.
+    \item \textbf{Aktualizacja awatara:} zmiana awatara zapisuje się w profilu użytkownika.
+    \item \textbf{Najlepszy streak bez rekordu:} brak danych zwraca \texttt{best\_streak = 0}.
+    \item \textbf{Bieżący streak:} długość streaku obliczana jest na podstawie dat aktywności.
+    \item \textbf{Odznaki użytkownika:} endpoint \texttt{me/badges} zwraca przypisane odznaki.
+    \item \textbf{EXP z quizów:} \texttt{exp} jest sumą procentów najlepszych wyników z wagą \texttt{exp\_weight}.
+    \item \textbf{Odznaka za 100\% w quizie:} przyznawana jest \texttt{BADGE\_QUIZ\_MASTER}.
+    \item \textbf{Odznaka za pierwszy ukończony kurs:} przyznawana jest \texttt{BADGE\_FIRST\_COURSE}.
+    \item \textbf{Odznaka za komentarz:} przyznawana jest \texttt{BADGE\_HELPING\_HAND}.
+    \item \textbf{Odznaki za streak:} dla streaku 14 dni przyznawane są \texttt{BADGE\_STREAK\_7} i \texttt{BADGE\_LOYAL\_USER}.
+\end{enumerate}
+
+\subsubsection*{Moduł courses (3 testy)}
+\begin{enumerate}
+    \item \textbf{Blokada lekcji:} po wejściu w kurs odblokowana jest tylko pierwsza lekcja, kolejne są zablokowane.
+    \item \textbf{Ukończenie lekcji i kursu:} ukończenie dwóch lekcji tworzy postęp lekcji i końcowy postęp kursu.
+    \item \textbf{Szczegóły lekcji:} endpoint zwraca slajdy lekcji oraz identyfikator powiązanego quizu.
+\end{enumerate}
+
+\subsubsection*{Moduł quizzes (6 testów)}
+\begin{enumerate}
+    \item \textbf{Lista quizów:} endpoint zwraca wszystkie utworzone quizy.
+    \item \textbf{Szczegóły quizu bez flagi poprawności:} odpowiedzi nie zawierają pola \texttt{is\_correct}.
+    \item \textbf{Wysłanie odpowiedzi:} poprawne odpowiedzi skutkują wynikiem 100\%, zapisem \texttt{best\_score} i naliczeniem \texttt{exp\_gained}.
+    \item \textbf{Leaderboard i wyniki:} leaderboard zawiera użytkownika z najlepszym wynikiem, a endpoint wyników zwraca \texttt{best\_score}.
+    \item \textbf{Autoryzacja klucza odpowiedzi:} brak uwierzytelnienia zwraca 401.
+    \item \textbf{Klucz odpowiedzi (zamknięte i otwarte):} zwracane są poprawne opcje dla pytań zamkniętych oraz wzorzec liczbowy dla pytań otwartych.
+\end{enumerate}
+
+\subsubsection*{Moduł forum (2 testy)}
+\begin{enumerate}
+    \item \textbf{Podsumowanie reakcji:} endpoint zwraca liczbę reakcji typu \texttt{LIKE} dla posta.
+    \item \textbf{Edycja komentarza:} autor może zaktualizować treść komentarza (HTTP 200).
+\end{enumerate}
+
 
 \subsection{Wyniki testów}
-Wszystkie testy zakończyły się \textbf{pomyślnie}. System automatycznych testów potwierdził poprawne działanie:
+Wszystkie testy zakończyły się \textbf{pomyślnie}. Testy potwierdzają poprawne działanie:
 \begin{itemize}
-    \item Endpointów API zgodnie ze specyfikacją REST,
-    \item Mechanizmów autoryzacji i uwierzytelniania,
-    \item Walidacji danych wejściowych,
-    \item Relacji między modelami bazy danych,
-    \item Logiki biznesowej w poszczególnych modułach,
-    \item Migracji bazy danych.
+    \item endpointów API i podstawowych scenariuszy użytkownika,
+    \item mechanizmów uwierzytelniania i autoryzacji,
+    \item logiki przyznawania odznak oraz wyliczania postępów,
+    \item relacji między modelami (kursy--lekcje--postępy, quizy--wyniki, forum--reakcje).
 \end{itemize}
 
-Brak błędów w testach potwierdza stabilność systemu oraz gotowość do dalszego rozwoju i wdrożenia.
+Brak błędów w testach potwierdza stabilność systemu oraz gotowość do dalszego rozwoju.
 
 \end{document}
