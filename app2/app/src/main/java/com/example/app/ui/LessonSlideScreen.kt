@@ -182,31 +182,37 @@ fun SlideContent(slide: SingleSlide) {
     val hasImage = !slide.image_url.isNullOrBlank()
     val scrollState = rememberScrollState()
 
-    Column(
+    BoxWithConstraints(
         modifier = Modifier
             .fillMaxSize()
             .verticalScroll(scrollState)
-            .padding(vertical = 24.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Top
     ) {
-        if (hasImage) {
-            AsyncImage(
-                model = slide.image_url,
-                contentDescription = null,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .heightIn(min = 180.dp, max = 400.dp)
-                    .clip(RoundedCornerShape(16.dp)),
-                contentScale = ContentScale.Fit
-            )
-            Spacer(modifier = Modifier.height(24.dp))
-        }
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .heightIn(min = maxHeight)
+                .padding(vertical = 24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            if (hasImage) {
+                AsyncImage(
+                    model = slide.image_url,
+                    contentDescription = null,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(min = 180.dp, max = 400.dp)
+                        .clip(RoundedCornerShape(16.dp)),
+                    contentScale = ContentScale.Fit
+                )
+                Spacer(modifier = Modifier.height(24.dp))
+            }
 
-        ChatBubble(
-            text = slide.text_content,
-            modifier = Modifier.fillMaxWidth()
-        )
+            ChatBubble(
+                text = slide.text_content,
+                modifier = Modifier.fillMaxWidth()
+            )
+        }
     }
 }
 
