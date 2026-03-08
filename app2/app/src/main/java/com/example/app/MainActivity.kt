@@ -10,7 +10,10 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
-            AppTheme(dynamicColor = false) {
+            AppTheme(
+                darkTheme = false,
+                dynamicColor = false
+            ) {
                 StudentApp()
             }
         }

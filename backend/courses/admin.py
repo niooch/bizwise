@@ -19,6 +19,13 @@ class SlideInlineForm(forms.ModelForm):
     class Meta:
         model = Slide
         fields = ["order", "text_content", "image_url", "image_upload"]
+        help_texts = {
+            "text_content": (
+                "Obsługiwane znaczniki: &lt;b&gt;tekst&lt;/b&gt; (pogrubienie), "
+                "&lt;i&gt;tekst&lt;/i&gt; (kursywa), &lt;br&gt; (nowa linia). "
+                "Przykład: To jest &lt;b&gt;ważne&lt;/b&gt; i &lt;i&gt;pochylone&lt;/i&gt;."
+            )
+        }
 
     def save(self, commit=True):
         instance = super().save(commit=False)

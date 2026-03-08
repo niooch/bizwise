@@ -1,14 +1,12 @@
 package com.example.app.ui
 
+import android.text.method.LinkMovementMethod
 import android.util.Log
-import androidx.compose.animation.AnimatedContent
-import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.togetherWith
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
+import android.widget.TextView
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -20,15 +18,19 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.viewinterop.AndroidView
+import androidx.core.text.HtmlCompat
 import coil.compose.AsyncImage
 import com.example.app.data.AllSlides
 import com.example.app.data.RetrofitClient
 import com.example.app.data.SingleSlide
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun LessonSlidesScreen(
     token: String,
@@ -37,20 +39,28 @@ fun LessonSlidesScreen(
     onQuizStart: (Int) -> Unit
 ) {
     var slidesData by remember { mutableStateOf<AllSlides?>(null) }
-    var currentSlideIndex by remember { mutableStateOf(0) }
     var isLoading by remember { mutableStateOf(true) }
+    var isLessonCompletionSent by remember(lessonId) { mutableStateOf(false) }
 
     val sortedSlides = remember(slidesData) {
         slidesData?.slides?.sortedBy { it.order } ?: emptyList()
     }
+    val pageCount = remember(sortedSlides.size) {
+        if (sortedSlides.isNotEmpty()) sortedSlides.size + 1 else 1
+    }
+    val pagerState = rememberPagerState(pageCount = { pageCount })
 
-    // 1. POBIERANIE DANYCH LEKCJI
     LaunchedEffect(lessonId) {
+        isLoading = true
+        isLessonCompletionSent = false
+        slidesData = null
         try {
             val response = RetrofitClient.api.allSlides("Bearer $token", lessonId)
             val body = response.body()
             if (response.isSuccessful && body != null) {
                 slidesData = body
+            } else {
+                Log.e("LessonSlidesScreen", "Błąd API: ${response.code()}")
             }
         } catch (e: Exception) {
             Log.e("API", "Błąd sieci: ${e.message}")
@@ -59,12 +69,12 @@ fun LessonSlidesScreen(
         }
     }
 
-    // 2. LOGIKA ZALICZANIA LEKCJI
-    LaunchedEffect(currentSlideIndex) {
-        if (!isLoading && sortedSlides.isNotEmpty() && currentSlideIndex >= sortedSlides.size) {
+    LaunchedEffect(pagerState.currentPage, isLoading, sortedSlides.size, isLessonCompletionSent) {
+        if (!isLoading && sortedSlides.isNotEmpty() && pagerState.currentPage >= sortedSlides.size && !isLessonCompletionSent) {
             try {
                 RetrofitClient.api.compleLesson("Bearer $token", lessonId)
                 Log.d("LessonSlidesScreen", "Lekcja $lessonId została pomyślnie zaliczona.")
+                isLessonCompletionSent = true
             } catch (e: Exception) {
                 Log.e("LessonSlidesScreen", "Błąd podczas zaliczania lekcji: ${e.message}")
             }
@@ -77,8 +87,9 @@ fun LessonSlidesScreen(
             if (sortedSlides.isNotEmpty()) {
                 LinearProgressIndicator(
                     progress = {
-                        if (currentSlideIndex < sortedSlides.size)
-                            (currentSlideIndex + 1) / sortedSlides.size.toFloat()
+                        if (pagerState.currentPage < sortedSlides.size) {
+                            (pagerState.currentPage + 1) / sortedSlides.size.toFloat()
+                        }
                         else 1f
                     },
                     modifier = Modifier.fillMaxWidth().height(4.dp),
@@ -91,34 +102,6 @@ fun LessonSlidesScreen(
                 .fillMaxSize()
                 .padding(innerPadding)
         ) {
-            // --- WARSTWA INTERAKCJI (NAWIGACJA LEWO/PRAWO) ---
-            if (!isLoading && currentSlideIndex < sortedSlides.size) {
-                Row(modifier = Modifier.fillMaxSize()) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxHeight()
-                            .weight(1f)
-                            .clickable(
-                                interactionSource = remember { MutableInteractionSource() },
-                                indication = null
-                            ) {
-                                if (currentSlideIndex > 0) currentSlideIndex--
-                            }
-                    )
-                    Box(
-                        modifier = Modifier
-                            .fillMaxHeight()
-                            .weight(1f)
-                            .clickable(
-                                interactionSource = remember { MutableInteractionSource() },
-                                indication = null
-                            ) {
-                                currentSlideIndex++
-                            }
-                    )
-                }
-            }
-
             IconButton(
                 onClick = onBack,
                 modifier = Modifier.align(Alignment.TopEnd).padding(16.dp)
@@ -130,45 +113,65 @@ fun LessonSlidesScreen(
                 CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
             } else if (sortedSlides.isEmpty() && slidesData != null) {
                 Text("Ta lekcja nie ma slajdów.", modifier = Modifier.align(Alignment.Center))
-            } else if (currentSlideIndex < sortedSlides.size) {
-                val currentSlide = sortedSlides[currentSlideIndex]
-
-                AnimatedContent(
-                    targetState = currentSlide,
-                    transitionSpec = {
-                        fadeIn(animationSpec = tween(300)) togetherWith fadeOut(tween(300))
-                    },
-                    label = "SlideAnimation",
+            } else if (sortedSlides.isNotEmpty()) {
+                HorizontalPager(
+                    state = pagerState,
                     modifier = Modifier
                         .fillMaxSize()
-                        .padding(horizontal = 48.dp)
-                ) { slide ->
-                    // Wycentrowanie SlideContent wewnątrz AnimatedContent
-                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        SlideContent(slide = slide)
+                        .padding(horizontal = 24.dp)
+                ) { page ->
+                    if (page < sortedSlides.size) {
+                        val slide = sortedSlides[page]
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(top = 16.dp, bottom = 72.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            SlideContent(slide = slide)
+                        }
+                    } else {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(bottom = 72.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.Center
+                        ) {
+                            Text("Lekcja zakończona!", fontSize = 24.sp, fontWeight = FontWeight.Bold)
+                            Spacer(modifier = Modifier.height(16.dp))
+                            val quizId = slidesData?.quiz_id
+                            if (quizId != null && quizId > 0) {
+                                Button(onClick = { onQuizStart(quizId) }) {
+                                    Text("Rozpocznij Quiz")
+                                }
+                            } else {
+                                Text(
+                                    "Ta lekcja nie ma przypisanego quizu.",
+                                    color = Color.Gray,
+                                    fontSize = 14.sp
+                                )
+                            }
+                        }
                     }
                 }
 
                 Text(
-                    text = "${currentSlideIndex + 1} / ${sortedSlides.size}",
+                    text = if (pagerState.currentPage < sortedSlides.size) {
+                        "${pagerState.currentPage + 1} / ${sortedSlides.size}"
+                    } else {
+                        "Koniec lekcji"
+                    },
                     modifier = Modifier.align(Alignment.BottomCenter).padding(32.dp),
                     color = Color.Gray,
                     fontSize = 12.sp
                 )
-
             } else {
-                Column(
+                Text(
+                    "Nie udało się pobrać slajdów lekcji.",
                     modifier = Modifier.align(Alignment.Center),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Text("Lekcja zakończona!", fontSize = 24.sp, fontWeight = FontWeight.Bold)
-                    Spacer(modifier = Modifier.height(16.dp))
-                    Button(
-                        onClick = { onQuizStart(slidesData?.quiz_id ?: 0) }
-                    ) {
-                        Text("Rozpocznij Quiz")
-                    }
-                }
+                    color = Color.Gray
+                )
             }
         }
     }
@@ -177,17 +180,15 @@ fun LessonSlidesScreen(
 @Composable
 fun SlideContent(slide: SingleSlide) {
     val hasImage = !slide.image_url.isNullOrBlank()
-    // Dodajemy stan przewijania
     val scrollState = rememberScrollState()
 
     Column(
         modifier = Modifier
-            .fillMaxWidth()
-            // Włączamy pionowe przewijanie
+            .fillMaxSize()
             .verticalScroll(scrollState)
             .padding(vertical = 24.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
+        verticalArrangement = Arrangement.Top
     ) {
         if (hasImage) {
             AsyncImage(
@@ -202,25 +203,54 @@ fun SlideContent(slide: SingleSlide) {
             Spacer(modifier = Modifier.height(24.dp))
         }
 
-        ChatBubble(text = slide.text_content)
+        ChatBubble(
+            text = slide.text_content,
+            modifier = Modifier.fillMaxWidth()
+        )
     }
 }
 
 @Composable
-fun ChatBubble(text: String) {
+fun ChatBubble(text: String, modifier: Modifier = Modifier) {
     Surface(
+        modifier = modifier,
         color = MaterialTheme.colorScheme.primaryContainer,
         shape = RoundedCornerShape(
             topStart = 24.dp, topEnd = 24.dp, bottomStart = 4.dp, bottomEnd = 24.dp
         ),
         shadowElevation = 4.dp
     ) {
-        Text(
+        HtmlFormattedText(
             text = text,
-            modifier = Modifier.padding(16.dp),
-            fontSize = 18.sp,
-            lineHeight = 24.sp,
-            color = MaterialTheme.colorScheme.onPrimaryContainer
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp)
         )
     }
+}
+
+@Composable
+private fun HtmlFormattedText(
+    text: String,
+    modifier: Modifier = Modifier
+) {
+    val textColor = MaterialTheme.colorScheme.onPrimaryContainer.toArgb()
+
+    AndroidView(
+        modifier = modifier,
+        factory = { context ->
+            TextView(context).apply {
+                textSize = 18f
+                setLineSpacing(0f, 1.25f)
+                movementMethod = LinkMovementMethod.getInstance()
+            }
+        },
+        update = { textView ->
+            textView.setTextColor(textColor)
+            textView.text = HtmlCompat.fromHtml(
+                text,
+                HtmlCompat.FROM_HTML_MODE_COMPACT
+            )
+        }
+    )
 }

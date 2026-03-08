@@ -23,6 +23,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.app.data.*
 import kotlinx.coroutines.launch
+import kotlin.math.roundToInt
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -49,6 +50,8 @@ fun QuizScreen(
     var isFeedbackVisible by remember { mutableStateOf(false) }
     var isCurrentAnswerCorrect by remember { mutableStateOf(false) }
     var feedbackMessage by remember { mutableStateOf("") }
+    var correctAnswersCount by remember { mutableStateOf(0) }
+    var scorePercent by remember { mutableStateOf(0) }
 
     var selectedOptionId by remember { mutableStateOf<Int?>(null) }
     var typedAnswer by remember { mutableStateOf("") }
@@ -61,24 +64,51 @@ fun QuizScreen(
         submitError = null
     }
 
+    fun isNumericAnswerCorrect(input: String, expectedPattern: String?): Boolean {
+        val expected = expectedPattern?.trim() ?: return false
+        val trimmedInput = input.trim()
+        val expectedInt = expected.toIntOrNull()
+        val inputInt = trimmedInput.toIntOrNull()
+        return if (expectedInt != null && inputInt != null) {
+            expectedInt == inputInt
+        } else {
+            trimmedInput == expected
+        }
+    }
+
     fun checkAnswer(question: Question) {
         val correctAnswer = quizAnswers?.questions?.find { it.id == question.id }
 
         if (question.question_type == "CLOSED") {
-            val selectedOption = question.answer_options.find { it.id == selectedOptionId }
             val correctList = correctAnswer?.correct_answer_options ?: emptyList()
-
-            isCurrentAnswerCorrect = correctList.any { it.content == selectedOption?.content }
+            isCurrentAnswerCorrect = correctList.any { it.id == selectedOptionId }
 
             val correctLabels = correctList.joinToString(", ") { it.content }
-            feedbackMessage = if (isCurrentAnswerCorrect) "Poprawna odpowiedź!"
-            else "Nieprawidłowa odpowiedź. Poprawna: $correctLabels"
+            feedbackMessage = if (isCurrentAnswerCorrect) {
+                "Poprawna odpowiedź!"
+            } else {
+                "Nieprawidłowa odpowiedź. Poprawna: ${if (correctLabels.isNotBlank()) correctLabels else "-"}"
+            }
         } else {
-            isCurrentAnswerCorrect = typedAnswer == correctAnswer?.correct_numeric_pattern
-            feedbackMessage = if (isCurrentAnswerCorrect) "Poprawna odpowiedź!"
-            else "Nieprawidłowa odpowiedź. Poprawna: ${correctAnswer?.correct_numeric_pattern}"
+            val expectedPattern = correctAnswer?.correct_numeric_pattern
+            isCurrentAnswerCorrect = isNumericAnswerCorrect(typedAnswer, expectedPattern)
+            feedbackMessage = if (isCurrentAnswerCorrect) {
+                "Poprawna odpowiedź!"
+            } else {
+                "Nieprawidłowa odpowiedź. Poprawna: ${expectedPattern ?: "-"}"
+            }
         }
         isFeedbackVisible = true
+    }
+
+    fun isSubmittedAnswerCorrect(question: Question, answer: Answer): Boolean {
+        val correctAnswer = quizAnswers?.questions?.find { it.id == question.id } ?: return false
+        return if (question.question_type == "CLOSED") {
+            correctAnswer.correct_answer_options.orEmpty().any { it.id == answer.selected_option_id }
+        } else {
+            val expectedPattern = correctAnswer.correct_numeric_pattern
+            isNumericAnswerCorrect(answer.numeric_answer.toString(), expectedPattern)
+        }
     }
 
     fun handleNext(question: Question) {
@@ -104,7 +134,19 @@ fun QuizScreen(
                 isSubmittingAnswer = true
                 submitError = null
                 try {
-                    val requestBody = Answers(answers = allAnswers.toList())
+                    val answersSnapshot = allAnswers.toList()
+                    val questionsSnapshot = quizData?.questions.orEmpty()
+                    correctAnswersCount = questionsSnapshot.count { question ->
+                        val submittedAnswer = answersSnapshot.find { it.question_id == question.id } ?: return@count false
+                        isSubmittedAnswerCorrect(question, submittedAnswer)
+                    }
+                    scorePercent = if (questionsSnapshot.isNotEmpty()) {
+                        ((correctAnswersCount.toFloat() / questionsSnapshot.size.toFloat()) * 100f).roundToInt()
+                    } else {
+                        0
+                    }
+
+                    val requestBody = Answers(answers = answersSnapshot)
                     RetrofitClient.api.submitAnswear("Bearer $token", quizId, requestBody)
 
                     isFeedbackVisible = false
@@ -214,6 +256,12 @@ fun QuizScreen(
                     Text("Quiz zakończony!", fontSize = 24.sp, fontWeight = FontWeight.Bold)
                     Spacer(modifier = Modifier.height(12.dp))
                     Text("Twoje odpowiedzi zostały wysłane.", textAlign = TextAlign.Center)
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = "Wynik: $scorePercent% ($correctAnswersCount/${quizData?.questions?.size ?: 0} poprawnych)",
+                        textAlign = TextAlign.Center,
+                        fontWeight = FontWeight.SemiBold
+                    )
                     Spacer(modifier = Modifier.height(24.dp))
                     Button(onClick = onBack, modifier = Modifier.fillMaxWidth()) {
                         Text("Powrót")
