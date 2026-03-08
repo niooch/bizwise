@@ -9,23 +9,25 @@ import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import coil.compose.AsyncImage
 import com.example.app.data.AllSlides
 import com.example.app.data.RetrofitClient
 import com.example.app.data.SingleSlide
-import coil.compose.AsyncImage
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.layout.ContentScale
 
 @Composable
 fun LessonSlidesScreen(
@@ -39,13 +41,13 @@ fun LessonSlidesScreen(
     var isLoading by remember { mutableStateOf(true) }
 
     val sortedSlides = remember(slidesData) {
-        slidesData?.slides?.sortedBy { it.order } ?: emptyList() //
+        slidesData?.slides?.sortedBy { it.order } ?: emptyList()
     }
 
     // 1. POBIERANIE DANYCH LEKCJI
     LaunchedEffect(lessonId) {
         try {
-            val response = RetrofitClient.api.allSlides("Bearer $token", lessonId) //
+            val response = RetrofitClient.api.allSlides("Bearer $token", lessonId)
             val body = response.body()
             if (response.isSuccessful && body != null) {
                 slidesData = body
@@ -57,13 +59,11 @@ fun LessonSlidesScreen(
         }
     }
 
-    // 2. LOGIKA ZALICZANIA LEKCJI (NAPRAWIONA)
-    // LaunchedEffect uruchomi się tylko wtedy, gdy currentSlideIndex osiągnie koniec listy
+    // 2. LOGIKA ZALICZANIA LEKCJI
     LaunchedEffect(currentSlideIndex) {
         if (!isLoading && sortedSlides.isNotEmpty() && currentSlideIndex >= sortedSlides.size) {
             try {
-                // Wywołujemy endpoint zaliczenia lekcji tylko raz
-                val response = RetrofitClient.api.compleLesson("Bearer $token", lessonId)
+                RetrofitClient.api.compleLesson("Bearer $token", lessonId)
                 Log.d("LessonSlidesScreen", "Lekcja $lessonId została pomyślnie zaliczona.")
             } catch (e: Exception) {
                 Log.e("LessonSlidesScreen", "Błąd podczas zaliczania lekcji: ${e.message}")
@@ -80,7 +80,7 @@ fun LessonSlidesScreen(
                         if (currentSlideIndex < sortedSlides.size)
                             (currentSlideIndex + 1) / sortedSlides.size.toFloat()
                         else 1f
-                    }, //
+                    },
                     modifier = Modifier.fillMaxWidth().height(4.dp),
                 )
             }
@@ -137,11 +137,16 @@ fun LessonSlidesScreen(
                     targetState = currentSlide,
                     transitionSpec = {
                         fadeIn(animationSpec = tween(300)) togetherWith fadeOut(tween(300))
-                    }, //
+                    },
                     label = "SlideAnimation",
-                    modifier = Modifier.align(Alignment.Center).padding(horizontal = 48.dp)
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(horizontal = 48.dp)
                 ) { slide ->
-                    SlideContent(slide = slide)
+                    // Wycentrowanie SlideContent wewnątrz AnimatedContent
+                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        SlideContent(slide = slide)
+                    }
                 }
 
                 Text(
@@ -152,7 +157,6 @@ fun LessonSlidesScreen(
                 )
 
             } else {
-                // EKRAN KOŃCOWY (Zaliczanie lekcji odbywa się w LaunchedEffect powyżej)
                 Column(
                     modifier = Modifier.align(Alignment.Center),
                     horizontalAlignment = Alignment.CenterHorizontally
@@ -160,7 +164,7 @@ fun LessonSlidesScreen(
                     Text("Lekcja zakończona!", fontSize = 24.sp, fontWeight = FontWeight.Bold)
                     Spacer(modifier = Modifier.height(16.dp))
                     Button(
-                        onClick = { onQuizStart(slidesData?.quiz_id ?: 0) } //
+                        onClick = { onQuizStart(slidesData?.quiz_id ?: 0) }
                     ) {
                         Text("Rozpocznij Quiz")
                     }
@@ -172,27 +176,32 @@ fun LessonSlidesScreen(
 
 @Composable
 fun SlideContent(slide: SingleSlide) {
-    val hasImage = !slide.image_url.isNullOrBlank() //
+    val hasImage = !slide.image_url.isNullOrBlank()
+    // Dodajemy stan przewijania
+    val scrollState = rememberScrollState()
 
     Column(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            // Włączamy pionowe przewijanie
+            .verticalScroll(scrollState)
+            .padding(vertical = 24.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
         if (hasImage) {
-            Spacer(modifier = Modifier.height(24.dp))
             AsyncImage(
                 model = slide.image_url,
                 contentDescription = null,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .heightIn(min = 180.dp, max = 420.dp)
+                    .heightIn(min = 180.dp, max = 400.dp)
                     .clip(RoundedCornerShape(16.dp)),
                 contentScale = ContentScale.Fit
             )
+            Spacer(modifier = Modifier.height(24.dp))
         }
 
-        Spacer(modifier = Modifier.height(24.dp))
         ChatBubble(text = slide.text_content)
     }
 }
