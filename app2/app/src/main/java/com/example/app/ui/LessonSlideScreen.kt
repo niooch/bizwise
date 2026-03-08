@@ -183,14 +183,13 @@ fun SlideContent(slide: SingleSlide) {
     val scrollState = rememberScrollState()
 
     BoxWithConstraints(
-        modifier = Modifier
-            .fillMaxSize()
-            .verticalScroll(scrollState)
+        modifier = Modifier.fillMaxSize()
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
                 .heightIn(min = maxHeight)
+                .verticalScroll(scrollState)
                 .padding(vertical = 24.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
