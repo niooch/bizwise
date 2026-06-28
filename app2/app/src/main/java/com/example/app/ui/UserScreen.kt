@@ -23,18 +23,30 @@ fun UserScreen(
     onProfileClick: () -> Unit,
     onCoursesClick: () -> Unit,
     onQuizzesClick: () -> Unit,
-    onForumClick: () -> Unit
+    onForumClick: () -> Unit,
+    onAuthExpired: () -> Unit
 ) {
     var userData by remember { mutableStateOf<InformationAboutMe?>(null) }
+    var isLoading by remember { mutableStateOf(true) }
+    var errorMessage by remember { mutableStateOf<String?>(null) }
 
-    LaunchedEffect(Unit) {
+    LaunchedEffect(token) {
+        isLoading = true
+        errorMessage = null
         try {
             val response = RetrofitClient.api.informationAboutMe("Bearer $token")
             if (response.isSuccessful && response.body() != null) {
                 userData = response.body()
+            } else if (response.code() == 401) {
+                onAuthExpired()
+            } else {
+                errorMessage = "Nie udało się pobrać danych użytkownika (${response.code()})"
             }
         } catch (e: Exception) {
             Log.e("UserScreen", "Error: ${e.message}")
+            errorMessage = "Błąd połączenia: ${e.localizedMessage ?: "nieznany"}"
+        } finally {
+            isLoading = false
         }
     }
 
@@ -105,16 +117,23 @@ fun UserScreen(
                 modifier = Modifier.align(Alignment.Center),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                if (userData != null) {
+                if (isLoading) {
+                    Text("Wczytywanie...", fontSize = 24.sp, fontWeight = FontWeight.Bold)
+                    Spacer(modifier = Modifier.height(8.dp))
+                    CircularProgressIndicator(modifier = Modifier.size(32.dp))
+                } else if (userData != null) {
                     Text(
                         text = "Witaj ${userData!!.username}",
                         fontSize = 28.sp,
                         fontWeight = FontWeight.Bold
                     )
+                } else if (errorMessage != null) {
+                    Text(
+                        text = errorMessage!!,
+                        color = MaterialTheme.colorScheme.error
+                    )
                 } else {
                     Text("Witaj Studencie", fontSize = 28.sp, fontWeight = FontWeight.Bold)
-                    Spacer(modifier = Modifier.height(8.dp))
-                    CircularProgressIndicator(modifier = Modifier.size(32.dp))
                 }
             }
         }

@@ -128,6 +128,9 @@ fun StudentApp() {
                         },
                         onForumClick = {
                             currentScreen = "FORUM"
+                        },
+                        onAuthExpired = {
+                            logoutAndGoToWelcome()
                         }
                     )
                 } else {

@@ -240,6 +240,11 @@ private fun HtmlFormattedText(
     modifier: Modifier = Modifier
 ) {
     val textColor = MaterialTheme.colorScheme.onPrimaryContainer.toArgb()
+    val normalizedText = remember(text) {
+        text
+            .replace("\\n", "\n")
+            .replace("\n", "<br/>")
+    }
 
     AndroidView(
         modifier = modifier,
@@ -253,7 +258,7 @@ private fun HtmlFormattedText(
         update = { textView ->
             textView.setTextColor(textColor)
             textView.text = HtmlCompat.fromHtml(
-                text,
+                normalizedText,
                 HtmlCompat.FROM_HTML_MODE_COMPACT
             )
         }
